@@ -1,0 +1,8 @@
+Extraer la carpeta en el directorio donde está instalado el Proteus de forma que automáticamente
+se copia el fichero dht11.dll en la carpeta MODELS y el fichero dht11.lib en la carpeta LIBRARY.
+
+Hay que tener privilegios de administrador para poder copiar los ficheros.
+
+DHT11: RH: 20..90% (+-5%), Temp: 0..50ºC (+-2ºC)
+DHT22 (AM2302): RH: 0..100% (+-3%), Temp: -40..125ºC(+-0.5ºC)
+

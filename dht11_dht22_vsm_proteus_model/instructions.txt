@@ -1,0 +1,8 @@
+Extract the file in the directory where Proteus is installed, so dht11.dll is created in the MODELS folder and dht11.lib 
+is created in the LIBRARY folder.
+
+You need administrator privileges to copy files.
+
+DHT11: RH: 20..90% (+-5%), Temp: 0..50ºC (+-2ºC)
+DHT22 (AM2302): RH: 0..100% (+-3%), Temp: -40..125ºC(+-0.5ºC)
+
