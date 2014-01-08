@@ -97,19 +97,19 @@ void setup() {
    // set the LED using the state of the button for testing:
    switch(buttonState){
      case BUTTON1:
-     digitalWrite(ledPin, buttonState>0);
+     lcd.print('1');
      break;
      case BUTTON2:
-     digitalWrite(ledPin, buttonState>0);
+     lcd.print('2');
      break;
      case BUTTON3:
-     digitalWrite(ledPin, buttonState>0);
+     lcd.print('3');
      break;
      case BUTTON4:
-     digitalWrite(ledPin, buttonState>0);
+     lcd.print('4');
      break;
      case BUTTON5:
-     digitalWrite(ledPin, buttonState>0);
+     lcd.print('5');
      break;
    }
  }
