@@ -21,8 +21,11 @@
 #include "proyecto_pi.h"
 #include "buttons.h"
 
-int active_menu = 0;
+int first_active_menu = 7;
+int second_active_menu = -1; //-1 disables secondary menu view
 button button_pressed = BUTTON_NONE;
+int last_lcd_refresh=0;
+int lcd_refresh_interval = 250;
 
 void setup() {
   lcd.begin(16,2);
@@ -32,45 +35,45 @@ void setup() {
   buttons_init();
   
   // Setup main pages content       "_-_-_-_-_-_-_-_"
-  main_pages[0].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[0].title_row ,  "      Menu   > ");
   strcpy(main_pages[0].content_row, "    Sensores   ");
   main_pages[0].on_click = &on_menu_click;
   
-  main_pages[1].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[1].title_row ,  " <    Menu   > ");
   strcpy(main_pages[1].content_row, "   Consigna 0  ");
   main_pages[1].on_click = &on_menu_click;
   
-  main_pages[2].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[2].title_row ,  " <    Menu   > ");
   strcpy(main_pages[2].content_row, "   Consigna 1  ");
   main_pages[2].on_click = &on_menu_click;
   
-  main_pages[3].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[3].title_row ,  " <    Menu   > ");
   strcpy(main_pages[3].content_row, "   Consigna 2  ");
   main_pages[3].on_click = &on_menu_click;
   
-  main_pages[4].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[4].title_row ,  " <    Menu   > ");
   strcpy(main_pages[4].content_row, "   Consigna 3  ");
   main_pages[4].on_click = &on_menu_click;
   
-  main_pages[5].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[5].title_row ,  " <    Menu   > ");
   strcpy(main_pages[5].content_row, "  Fijar  hora  ");
   main_pages[5].on_click = &on_menu_click;
   
-  main_pages[6].level = LCD_PAGE_LEVEL_FIRST;
   strcpy(main_pages[6].title_row ,  " <    Menu   > ");
   strcpy(main_pages[6].content_row, "  Estadisticas ");
   main_pages[6].on_click = &on_menu_click;
   
-  main_pages[7].level = LCD_PAGE_LEVEL_FIRST;
+  //about subpage
+  strcpy(about_pages[0].title_row , "(C) rafael1193 ");
+  strcpy(about_pages[0].content_row," GPLv3 license ");
+  about_pages[0].on_click = &on_about_click;
+  
+  //about page
   strcpy(main_pages[7].title_row ,  " <    Menu     ");
   strcpy(main_pages[7].content_row, "  Acerca de... ");
   main_pages[7].on_click = &on_menu_click;
+  main_pages[7].children_pages = &about_pages[0];
+  main_pages[7].children_length = ABOUT_PAGES_COUNT;
   
 }
 
@@ -78,37 +81,73 @@ void on_menu_click(button but)
 {
   switch (but)
   {
-    
     case BUTTON_LEFT:
-      if(active_menu > 0)
+      if(first_active_menu > 0)
       {
-        active_menu--;
+        first_active_menu--;
       }
       break;
-    case BUTTON_RIGHT:;
-      if(active_menu < MAIN_PAGES_COUNT-1)
+    case BUTTON_RIGHT:
+      if(first_active_menu < MAIN_PAGES_COUNT-1)
       {
-        active_menu++;
+        first_active_menu++;
       }
       break;
+    case BUTTON_RETURN:
+      second_active_menu = 0;
+      //last_lcd_refresh=0; //Necesario?
+      
     default:
       break;
   }
 }
 
-void loop() {
-  Serial.write("funcionando");
-  button_pressed = buttons_read_non_blocking();
-  Serial.write(button_pressed);
-  if (button_pressed != 0){
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print(main_pages[active_menu].title_row);
-    lcd.setCursor(0,1);
-    lcd.print(main_pages[active_menu].content_row);
-    main_pages[active_menu].on_click(button_pressed);
+void on_about_click(button but)
+{
+  if(but != BUTTON_NONE)
+  {
+    second_active_menu = -1; //This means, get back to main menu
   }
-    delay(100);
+}
+
+void loop() {
+  
+  //Screen refresh rate must be limited
+  if(millis() - last_lcd_refresh > lcd_refresh_interval)
+  {
+    Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
+    if(second_active_menu != -1)
+    {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
+      lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
+      lcd.setCursor(0,1);
+      lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].content_row);
+    }else{
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print(main_pages[first_active_menu].title_row);
+      lcd.setCursor(0,1);
+      lcd.print(main_pages[first_active_menu].content_row);
+    }
+    last_lcd_refresh=millis();
+  }
+  
+  button_pressed = buttons_read();
+  Serial.write(button_pressed); // DEBUG:
+  if (button_pressed != 0){
+    if(second_active_menu != -1)
+    {
+      last_lcd_refresh = 0; //Force LCD refresh
+      main_pages[first_active_menu].children_pages[second_active_menu].on_click(button_pressed);
+    }else{
+      last_lcd_refresh = 0; //Force LCD refresh
+      main_pages[first_active_menu].on_click(button_pressed);
+    }
+
+  }
+  
 
   
 }

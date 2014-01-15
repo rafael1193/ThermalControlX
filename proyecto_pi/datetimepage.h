@@ -15,18 +15,5 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#ifndef PROYECTO_PI_H
-#define PROYECTO_PI_H
-
-#define MAIN_PAGES_COUNT 8
-#define ABOUT_PAGES_COUNT 1
-
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-lcdmenu_page main_pages[MAIN_PAGES_COUNT];
-lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
-int active_page = 0;
-
-
-#endif /* PROYECTO_PI_H */
-
+ 
+ 
