@@ -21,12 +21,8 @@
 
 #define MAIN_PAGES_COUNT 8
 #define ABOUT_PAGES_COUNT 1
-
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-lcdmenu_page main_pages[MAIN_PAGES_COUNT];
-lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
-int active_page = 0;
-
+#define SENSOR_PAGES_COUNT 2
+#define SETDATETIME_PAGES_COUNT 2
 
 #endif /* PROYECTO_PI_H */
 
