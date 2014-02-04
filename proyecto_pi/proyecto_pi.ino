@@ -21,6 +21,7 @@
 #include <Time.h>
 #include "lcdmenu.h"
 #include "buttons.h"
+#include <OneWire.h>
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 lcdmenu_page main_pages[MAIN_PAGES_COUNT];
@@ -28,18 +29,31 @@ lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 
-int active_page = 0;
+/* Menu postion data */
 int first_active_menu = 0;
-int second_active_menu = -1; //-1 disables secondary menu view
+int second_active_menu = 1; //-1 disables secondary menu view
 button button_pressed = BUTTON_NONE;
+
+/* Update timings */
+//FIXME: upgrade this to solve millis() overflow. In 50 days from now it's going to reset to 0 !!!
 int last_lcd_refresh=0;
 int lcd_refresh_interval = 250;
 int last_time_refresh=0;
 int time_refresh_interval = 30000;
+int last_weather_refresh=0;
+int weather_refresh_interval = 600; //Each minute
 
-int temperature_air = 20;
-int temperature_water = 30;
-int humidity = 50;
+/* Weather */
+int temperature_air = 22;
+int temperature_water = 35;
+int humidity = 52;
+
+/* 1-Wire addresses */
+byte air_temp_adress[8] = {0x10, 0xcd, 0xa4, 0x3e, 0x00, 0x00, 0x00, 0x5f}; //ID in real life
+byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //ID in real life
+
+//byte air_temp_adress[8] = {0x10, 0x70, 0xc7, 0xcd, 0x02, 0x08, 0x00, 0x8D}; //ID in real life
+//byte tube_temp_adress[8] = {0x10, 0x3e, 0xa4, 0xcd, 0x02, 0x08, 0x00, 0xB4}; //ID in real life
 
 void setup() {
   lcd.begin(16,2);
@@ -64,7 +78,7 @@ void setup() {
   strcpy(sensor_pages[1].content_row,"Tc=12oC  HU=34%");
   sensor_pages[1].on_click = &on_sensor_submenu_click;
   sensor_pages[1].update = &no_update;
-  sensor_pages[1].draw = NULL;
+  sensor_pages[1].draw = &draw_temperature_humidity;
 
   //sensor main page                                   
   strcpy(main_pages[0].title_row ,  "      Menu   > ");
@@ -141,6 +155,11 @@ void setup() {
   main_pages[7].draw = NULL;
   main_pages[7].children_pages = &about_pages[0];
   main_pages[7].children_length = ABOUT_PAGES_COUNT;
+  
+  //Update everything
+  last_weather_refresh = 1000000;
+  last_lcd_refresh = 10000;
+  last_time_refresh = 10000000;
   
 }
 
@@ -251,6 +270,7 @@ void draw_datetime()
 
 void draw_temperature_humidity()
 {
+//  Serial.println("he llegao");
   String str_arriba = "";
   String str_abajo = "";
   String str_air = String(temperature_air, 10);
@@ -282,10 +302,10 @@ void draw_temperature_humidity()
   str_abajo += str_humidity;
   str_abajo += "%";
 
-  str_arriba.toCharArray(sensor_pages[1].title_row, 16);
-  str_abajo.toCharArray(sensor_pages[1].content_row, 16);
-  Serial.println(sensor_pages[1].title_row);
-  Serial.println(sensor_pages[1].content_row);
+  str_arriba.toCharArray(sensor_pages[1].title_row, 15);
+  str_abajo.toCharArray(sensor_pages[1].content_row, 15);
+//  Serial.println(sensor_pages[1].title_row);
+//  Serial.println(sensor_pages[1].content_row);
   
   lcd.print(str_arriba);
   lcd.setCursor(0, 1);
@@ -320,7 +340,7 @@ void loop() {
       {
         lcd.clear();
         lcd.setCursor(0,0);
-        Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
+        //Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.setCursor(0,1);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].content_row);
@@ -332,7 +352,7 @@ void loop() {
         main_pages[first_active_menu].children_pages[second_active_menu].draw();
       }
     }else{
-      if(main_pages[first_active_menu].children_pages[second_active_menu].draw == NULL) // No se ha especificado una rutina de dibujado especial
+      if(main_pages[first_active_menu].draw == NULL) // No se ha especificado una rutina de dibujado especial
       {
       lcd.clear();
       lcd.setCursor(0,0);
@@ -368,6 +388,27 @@ void loop() {
 
   }
   
-
+  ////////////////////////
+  // TEMPERATURE UPDATE //
+  ////////////////////////
+  Serial.println(last_weather_refresh);
+  if(millis() - last_weather_refresh > weather_refresh_interval) 
+  {
+    //It's time to update weather info!
+    
+    temperature_air = round_macro(getTemp(air_temp_adress));
+    Serial.print("Ta|");
+    Serial.println(getTemp(air_temp_adress));
+    
+    temperature_water = round_macro(getTemp(water_temp_adress));
+    Serial.print("Tc|");
+    Serial.println(getTemp(water_temp_adress));
+    
+    //TODO: Humidity information
+    
+    last_weather_refresh = millis();
+  }
   
 }
+
+

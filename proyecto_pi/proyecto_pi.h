@@ -24,5 +24,7 @@
 #define SENSOR_PAGES_COUNT 2
 #define SETDATETIME_PAGES_COUNT 2
 
+#define round_macro(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5)) //Temperature will never be near MAX_INT or MIN_INT, so there is no risk of overflow
+
 #endif /* PROYECTO_PI_H */
 
