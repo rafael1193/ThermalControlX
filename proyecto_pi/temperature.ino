@@ -37,27 +37,27 @@ float getTemp(byte addr[8]){
   float celsius;
   
   if (OneWire::crc8(addr, 7) != addr[7]) {
-      Serial.println("CRC is not valid!");
+      //Serial.println("CRC is not valid!");
       return -1001;
   }
-  Serial.println();
+  //Serial.println();
  
   // the first ROM byte indicates which chip
   switch (addr[0]) {
     case 0x10:
-      Serial.println("  Chip = DS18S20");  // or old DS1820
+      //Serial.println("  Chip = DS18S20");  // or old DS1820
       type_s = 1;
       break;
     case 0x28:
-      Serial.println("  Chip = DS18B20");
+      //Serial.println("  Chip = DS18B20");
       type_s = 0;
       break;
     case 0x22:
-      Serial.println("  Chip = DS1822");
+      //Serial.println("  Chip = DS1822");
       type_s = 0;
       break;
     default:
-      Serial.println("Device is not a DS18x20 family device.");
+      //Serial.println("Device is not a DS18x20 family device.");
       return -1000;
   } 
 

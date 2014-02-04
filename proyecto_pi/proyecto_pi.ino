@@ -36,12 +36,12 @@ button button_pressed = BUTTON_NONE;
 
 /* Update timings */
 //FIXME: upgrade this to solve millis() overflow. In 50 days from now it's going to reset to 0 !!!
-int last_lcd_refresh=0;
-int lcd_refresh_interval = 250;
-int last_time_refresh=0;
-int time_refresh_interval = 30000;
-int last_weather_refresh=0;
-int weather_refresh_interval = 600; //Each minute
+unsigned long last_lcd_refresh = 0;
+unsigned long lcd_refresh_interval = 250;
+unsigned long last_time_refresh = 0;
+unsigned long time_refresh_interval = 30000;
+unsigned long last_weather_refresh = 0;
+unsigned long weather_refresh_interval = 60000; //Each minute
 
 /* Weather */
 int temperature_air = 22;
@@ -157,9 +157,9 @@ void setup() {
   main_pages[7].children_length = ABOUT_PAGES_COUNT;
   
   //Update everything
-  last_weather_refresh = 1000000;
-  last_lcd_refresh = 10000;
-  last_time_refresh = 10000000;
+  last_weather_refresh = weather_refresh_interval;
+  last_lcd_refresh = lcd_refresh_interval;
+  last_time_refresh = time_refresh_interval;
   
 }
 
@@ -326,7 +326,7 @@ void loop() {
   ////////////////////
   
   //Screen refresh rate must be limited
-  if(millis() - last_lcd_refresh > lcd_refresh_interval)
+  if(abs(millis() - last_lcd_refresh) > lcd_refresh_interval)
   {
     //Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
     if(second_active_menu != -1)
@@ -391,20 +391,21 @@ void loop() {
   ////////////////////////
   // TEMPERATURE UPDATE //
   ////////////////////////
-  Serial.println(last_weather_refresh);
-  if(millis() - last_weather_refresh > weather_refresh_interval) 
+  //Serial.println(last_weather_refresh);
+  if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
   {
     //It's time to update weather info!
     
     temperature_air = round_macro(getTemp(air_temp_adress));
-    Serial.print("Ta|");
+    Serial.write("Ta|");
     Serial.println(getTemp(air_temp_adress));
     
     temperature_water = round_macro(getTemp(water_temp_adress));
-    Serial.print("Tc|");
+    Serial.write("Tc|");
     Serial.println(getTemp(water_temp_adress));
     
     //TODO: Humidity information
+    //TODO: Error handling
     
     last_weather_refresh = millis();
   }
