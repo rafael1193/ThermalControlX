@@ -28,5 +28,6 @@ typedef struct lcdmenu_page {
   lcdmenu_page* children_pages;
   int children_length;
 };
+#define INDEX_MARK '?'
  
 #endif /* LCDMENU_H */

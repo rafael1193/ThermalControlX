@@ -26,5 +26,16 @@
 
 #define round_macro(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5)) //Temperature will never be near MAX_INT or MIN_INT, so there is no risk of overflow
 
+typedef enum DAYOFWEEK
+{
+  DAY_SUNDAY = 1,
+  DAY_MONDAY = 2,
+  DAY_TUESDAY = 3,
+  DAY_WEDNESDAY = 4,
+  DAY_THURSDAY = 2,
+  DAY_FRIDAY = 2,
+  DAY_SATURDAY = 2
+};
+
 #endif /* PROYECTO_PI_H */
 

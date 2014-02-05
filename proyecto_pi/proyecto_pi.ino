@@ -33,8 +33,8 @@ lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 
 /* Menu postion data */
-int first_active_menu = 0;
-int second_active_menu = -1; //-1 disables secondary menu view
+int first_active_menu = 5;
+int second_active_menu = 0; //-1 disables secondary menu view
 int tag = 0; //Tag is a multipurpose datum to store something that a page must maintain, like an index.
 button button_pressed = BUTTON_NONE;
 
@@ -120,7 +120,7 @@ void setup() {
   strcpy(setdatetime_pages[0].title_row , " >01/>01/>1970  ");
   strcpy(setdatetime_pages[0].content_row,"    >13:>37     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
-  setdatetime_pages[0].draw = NULL;
+  setdatetime_pages[0].draw = &draw_setdatetime;
   
   strcpy(main_pages[5].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[5].content_row, "   Fijar  hora  ");
@@ -203,25 +203,75 @@ void on_sensor_submenu_click(button but)
 
 void on_setdatetime_submenu_click(button but)
 {
+  tmElements_t tm;
   switch (but)
   {
     case BUTTON_LEFT:
-      if(second_active_menu > 0)
+      if(tag > 0)
       {
-        second_active_menu--;
+        tag--;
       }
       break;
     case BUTTON_RIGHT:
-      if(second_active_menu < SETDATETIME_PAGES_COUNT-1)
+      if(tag < 4)
       {
-        second_active_menu++;
+        tag++;
       }
+      break;
+    case BUTTON_PLUS:
+      RTC.read(tm);
+      switch (tag)
+      {
+        case 0: //day
+          //TODO: 
+          break;
+        case 1: //month
+          if(tm.Month < 12) {++tm.Month;}
+          break;
+        case 2: //year
+          if(tm.Year < 99 /*Y2k38 effect warning!*/) {++tm.Year;}
+          break;
+        case 3: //hour
+          if(tm.Minute < 23) {++tm.Hour;}
+          break;
+        case 4: //minute
+          if(tm.Minute < 59) {++tm.Minute;}
+          break;
+      }
+      setTime(makeTime(tm));
+      RTC.write(tm);
+      break;
+    case BUTTON_MINUS:
+      RTC.read(tm);
+      switch (tag)
+      {
+        case 0: //day
+          //TODO: 
+          break;
+        case 1: //month
+          if(tm.Month > 1) {--tm.Month;}
+          break;
+        case 2: //year
+          if(tm.Year > 0) {--tm.Year;}
+          break;
+        case 3: //hour
+          if(tm.Minute > 0) {--tm.Hour;}
+          break;
+        case 4: //minute
+          if(tm.Minute > 0) {--tm.Minute;}
+          break;
+      }
+      setTime(makeTime(tm));
+      RTC.write(tm);
       break;
     case BUTTON_RETURN:
       second_active_menu = -1;
+      break;
     default:
       break;
   }
+  
+  return;
 }
 
 void on_about_submenu_click(button but)
@@ -329,8 +379,80 @@ void draw_temperature_humidity()
   return;
 }
 
-void no_update()
+void draw_setdatetime()
 {
+  String str_day = String(day(), 10);
+  String str_month = String(month(), 10);
+  String str_year = String(year(), 10);
+  String str_hour = String(hour(), 10);
+  String str_minute = String(minute(), 10);
+  //        "01234567890123456"
+  lcd.print("  00/ 00/ 0000  ");
+  lcd.print("     00: 00     ");
+  if(str_day.length() <= 1) // Padding
+  {
+    lcd.setCursor(3, 0);
+    lcd.print(str_day);
+  }else
+  {
+    lcd.setCursor(2, 0);
+    lcd.print(str_day);
+  }
+  if(str_month.length() <= 1) // Padding
+  {
+    lcd.setCursor(7, 0);
+    lcd.print(str_month);
+  }
+  else
+  {
+    lcd.setCursor(6, 0);
+    lcd.print(str_month);
+  }
+  lcd.setCursor(10, 0);
+  lcd.print(str_year);
+  if(str_hour.length() <= 1) // Padding
+  {
+    lcd.setCursor(6, 1);
+    lcd.print(str_hour);
+  }else
+  {
+    lcd.setCursor(5, 1);
+    lcd.print(str_hour);
+  }
+  if(str_minute.length() <= 1) // Padding
+  {
+    lcd.setCursor(10, 1);
+    lcd.print(str_minute);
+  }
+  else
+  {
+    lcd.setCursor(9, 1);
+    lcd.print(str_minute);
+  }
+
+  switch (tag)
+  {
+    case 0:
+      lcd.setCursor(1, 0);
+      lcd.write(INDEX_MARK);
+      break;
+    case 1:
+      lcd.setCursor(5, 0);
+      lcd.write(INDEX_MARK);
+      break;
+    case 2:
+      lcd.setCursor(9, 0);
+      lcd.write(INDEX_MARK);
+      break;
+    case 3:
+      lcd.setCursor(4, 1);
+      lcd.write(INDEX_MARK);
+      break;
+    case 4:
+      lcd.setCursor(8, 1);
+      lcd.write(INDEX_MARK);
+      break;
+  }
   return;
 }
 
@@ -384,8 +506,6 @@ void loop()
   //////////////////
   // TIME REFRESH //
   //////////////////
-  
-  
   
   ////////////////////
   // SCREEN REFRESH //
