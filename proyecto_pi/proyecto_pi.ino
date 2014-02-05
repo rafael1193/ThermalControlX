@@ -51,7 +51,9 @@ int temperature_air = 22;
 int temperature_water = 35;
 int humidity = 52;
 
-/* Time */
+/* Orders */
+
+order_time order[NUM_ORDERS];
 
 /* 1-Wire addresses */
 byte air_temp_adress[8] = {0x10, 0xcd, 0xa4, 0x3e, 0x00, 0x00, 0x00, 0x5f}; //ID in real life
@@ -223,13 +225,49 @@ void on_setdatetime_submenu_click(button but)
       switch (tag)
       {
         case 0: //day
-          //TODO: 
+          switch (days_in_month(tm.Month, tm.Year))
+          {
+            case 31:
+              if(tm.Day < 31) {++tm.Day;}
+              break;
+            case 30: //30-days months
+              if(tm.Day < 30) {++tm.Day;}
+              break;
+            //FIXME: february 29th error!!!!
+            case 28: //February non lap
+              if(tm.Day < 28) {++tm.Day;}
+              break;
+            case 29: //February lap
+              if(tm.Day < 29) {++tm.Day;}
+              break;
+            default: //If Month is garbage due to an error, let's be it 1.
+              tm.Month = 1;
+              tm.Day = 1;
+              break;
+          }
           break;
         case 1: //month
           if(tm.Month < 12) {++tm.Month;}
+          switch (days_in_month(tm.Month, tm.Year)) //Check if day is still valid for current month
+          {
+            case 30: //30-days months
+              if(tm.Day > 30) {tm.Day = 30;}
+              break;
+            case 28: //February
+              if(tm.Day > 28) {tm.Day = 28;}
+              break;
+            case 29: //February lap year
+              if(tm.Day > 29) {tm.Day = 29;}
+              break;
+          }
           break;
         case 2: //year
-          if(tm.Year < 99 /*Y2k38 effect warning!*/) {++tm.Year;}
+          if(tm.Year < 99 /*Y2k38!*/) {++tm.Year;}
+          // On year change it's necesary to check if day is still valid
+          if(tm.Day == 29 && tm.Month == 2 && !islapyear(tm.Year))
+          {
+            tm.Day = 28;
+          }
           break;
         case 3: //hour
           if(tm.Minute < 23) {++tm.Hour;}
@@ -246,13 +284,29 @@ void on_setdatetime_submenu_click(button but)
       switch (tag)
       {
         case 0: //day
-          //TODO: 
+          if(tm.Day > 1) {--tm.Day;}
           break;
         case 1: //month
           if(tm.Month > 1) {--tm.Month;}
+          switch (days_in_month(tm.Month, tm.Year)) //Check if day is still valid for current month
+          {
+            case 30: //30-days months
+              if(tm.Day > 30) {tm.Day = 30;}
+              break;
+            case 28: //February
+              if(tm.Day > 28) {tm.Day = 28;}
+              break;
+            case 29: //February lap year
+              if(tm.Day > 29) {tm.Day = 29;}
+              break;
+          }
           break;
         case 2: //year
           if(tm.Year > 0) {--tm.Year;}
+          if(tm.Day == 29 && tm.Month == 2 && !islapyear(tm.Year))
+          {
+            tm.Day = 28;
+          }
           break;
         case 3: //hour
           if(tm.Minute > 0) {--tm.Hour;}
@@ -272,6 +326,57 @@ void on_setdatetime_submenu_click(button but)
   }
   
   return;
+}
+
+/* 
+  Calculates the number of days in the specified month 
+  Returns -1 on error
+ */
+int days_in_month(int mon, int ye)
+{
+  switch(mon)
+  {
+    //31-days months
+    case 1:
+    case 3:
+    case 5:
+    case 7:
+    case 8:
+    case 10:
+    case 12:
+      return 31;
+    
+    //30-days months
+    case 4:
+    case 6:
+    case 9:
+    case 11: 
+      return 30; 
+    case 2: 
+      if(islapyear(ye) == true) //February
+      {
+        Serial.write("bisiesto!");
+        return 29;
+      } else 
+      {
+        return 28; // Not lap year
+      }
+    default:
+      return -1;
+  } 
+}
+
+/* 
+  Returns "true" the specified year is a lap year, else, returns "false"
+ */
+boolean islapyear(int ye)
+{
+  if (ye % 4 == 0  && (ye % 100 != 0  ||  ye % 400 == 0))
+  {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void on_about_submenu_click(button but)

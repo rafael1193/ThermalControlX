@@ -24,6 +24,8 @@
 #define SENSOR_PAGES_COUNT 2
 #define SETDATETIME_PAGES_COUNT 1
 
+#define NUM_ORDERS 4
+
 #define round_macro(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5)) //Temperature will never be near MAX_INT or MIN_INT, so there is no risk of overflow
 
 typedef enum DAYOFWEEK
@@ -32,9 +34,17 @@ typedef enum DAYOFWEEK
   DAY_MONDAY = 2,
   DAY_TUESDAY = 3,
   DAY_WEDNESDAY = 4,
-  DAY_THURSDAY = 2,
-  DAY_FRIDAY = 2,
-  DAY_SATURDAY = 2
+  DAY_THURSDAY = 5,
+  DAY_FRIDAY = 6,
+  DAY_SATURDAY = 7
+};
+
+typedef struct order_time {
+  int start_hour;
+  int start_minute;
+  int end_hour;
+  int end_minute;
+  int active_days;  
 };
 
 #endif /* PROYECTO_PI_H */
