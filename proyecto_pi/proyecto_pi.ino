@@ -34,8 +34,8 @@ lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
 
 /* Menu postion data */
-int first_active_menu = 5;
-int second_active_menu = 0; //-1 disables secondary menu view
+int first_active_menu = 0;
+int second_active_menu = -1; //-1 disables secondary menu view
 int tag = 0; //Tag is a multipurpose datum to store something that a page must maintain, like an index.
 button button_pressed = BUTTON_NONE;
 
@@ -53,8 +53,7 @@ int temperature_water = 35;
 int humidity = 52;
 
 /* Orders */
-
-order_time order[NUM_ORDERS];
+order_t order[NUM_ORDERS];
 
 /* 1-Wire addresses */
 byte air_temp_adress[8] = {0x10, 0xcd, 0xa4, 0x3e, 0x00, 0x00, 0x00, 0x5f}; //ID in real life
@@ -62,6 +61,8 @@ byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //
 
 //byte air_temp_adress[8] = {0x10, 0x70, 0xc7, 0xcd, 0x02, 0x08, 0x00, 0x8D}; //ID in real life
 //byte tube_temp_adress[8] = {0x10, 0x3e, 0xa4, 0xcd, 0x02, 0x08, 0x00, 0xB4}; //ID in real life
+
+/* Boiler */
 
 void setup() {
   lcd.begin(16,2);
@@ -73,6 +74,10 @@ void setup() {
   Serial.begin(9600);
   
   buttons_init();
+  
+  //Relay setup
+  pinMode(RELAY_PIN, OUTPUT);
+  //digitalWrite(RELAY_PIN, HIGH);
   
   //Time setup
   setTime(1,10,0,16,12,2014);

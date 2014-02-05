@@ -21,6 +21,8 @@
 
 #define PROGRAM_VERSION "v0.1.00"
 
+#define RELAY_PIN 9
+
 #define MAIN_PAGES_COUNT 8
 #define ABOUT_PAGES_COUNT 1
 #define SENSOR_PAGES_COUNT 2
@@ -42,12 +44,13 @@ typedef enum DAYOFWEEK
   DAY_SATURDAY = 7
 };
 
-typedef struct order_time {
+typedef struct order_t {
   int start_hour;
   int start_minute;
   int end_hour;
   int end_minute;
-  int active_days;  
+  int active_days;
+  int air_temperature;
 };
 
 #endif /* PROYECTO_PI_H */
