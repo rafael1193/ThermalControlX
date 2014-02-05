@@ -64,6 +64,14 @@ byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //
 
 /* Boiler */
 
+
+/*****************/
+/* setup methods */
+/*****************/
+
+/***
+  Arduino setup()
+***/
 void setup() {
   lcd.begin(16,2);
   lcd.setCursor(0, 0);
@@ -82,6 +90,7 @@ void setup() {
   //Time setup
   setTime(1,10,0,16,12,2014);
   setSyncProvider(RTC.get);
+  setSyncInterval(300); //5 minutes
   
   // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
@@ -200,6 +209,14 @@ void setup() {
   
 }
 
+
+/*****************************/
+/* on_click handling methods */
+/*****************************/
+
+/***
+  Main menu on_click handler method
+***/
 void on_menu_click(button but)
 {
   switch (but)
@@ -223,6 +240,9 @@ void on_menu_click(button but)
   }
 }
 
+/***
+  sensor submenu on_click handler method
+***/
 void on_sensor_submenu_click(button but)
 {
   switch (but)
@@ -246,6 +266,9 @@ void on_sensor_submenu_click(button but)
   }
 }
 
+/***
+  set date & time on_click handler method
+***/
 void on_setdatetime_submenu_click(button but)
 {
   tmElements_t tm;
@@ -371,6 +394,23 @@ void on_setdatetime_submenu_click(button but)
   return;
 }
 
+/***
+  About on_click handler method
+  All pushed buttons trigger "get back to main menu"
+***/
+void on_about_submenu_click(button but)
+{
+  if(but != BUTTON_NONE)
+  {
+    second_active_menu = -1; //This means, get back to main menu
+  }
+}
+
+
+/******************/
+/* helper methods */
+/******************/
+
 /* 
   Calculates the number of days in the specified month 
   Returns -1 on error
@@ -422,14 +462,14 @@ boolean islapyear(int ye)
   }
 }
 
-void on_about_submenu_click(button but)
-{
-  if(but != BUTTON_NONE)
-  {
-    second_active_menu = -1; //This means, get back to main menu
-  }
-}
 
+/****************************/
+/* draw handling methods */
+/****************************/
+
+/***
+  Date & Time sensor draw handler method
+***/
 void draw_datetime()
 {
     String str_arriba = "";
@@ -481,6 +521,9 @@ void draw_datetime()
   return;
 }
 
+/***
+  Temperature & Humidity sensor draw handler method
+***/
 void draw_temperature_humidity()
 {
 //  Serial.println("he llegao");
@@ -527,6 +570,9 @@ void draw_temperature_humidity()
   return;
 }
 
+/***
+  Date & Time setter draw handler method
+***/
 void draw_setdatetime()
 {
   String str_day = String(day(), 10);
@@ -604,6 +650,13 @@ void draw_setdatetime()
   return;
 }
 
+/*******************/
+/* looping methods */
+/*******************/
+
+/***
+  Arduino loop()
+***/
 void loop() 
 {
   ////////////////////
@@ -623,6 +676,7 @@ void loop()
     }
 
   }
+  
   
   ////////////////////
   // WEATHER UPDATE //
@@ -647,13 +701,20 @@ void loop()
     last_weather_refresh = millis();
   }
   
+  
   /////////////////////
   // CONSIGNA UPDATE //
   /////////////////////
   
+  
+  
+  
   //////////////////
   // TIME REFRESH //
   //////////////////
+  
+  
+  
   
   ////////////////////
   // SCREEN REFRESH //
@@ -699,5 +760,3 @@ void loop()
     last_lcd_refresh=millis();
   }
 }
-
-
