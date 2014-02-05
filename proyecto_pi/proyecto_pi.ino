@@ -22,6 +22,9 @@
 #include "lcdmenu.h"
 #include "buttons.h"
 #include <OneWire.h>
+#include <Wire.h>
+#include <DS1307RTC.h>
+
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 lcdmenu_page main_pages[MAIN_PAGES_COUNT];
@@ -31,11 +34,11 @@ lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 
 /* Menu postion data */
 int first_active_menu = 0;
-int second_active_menu = 1; //-1 disables secondary menu view
+int second_active_menu = -1; //-1 disables secondary menu view
+int tag = 0; //Tag is a multipurpose datum to store something that a page must maintain, like an index.
 button button_pressed = BUTTON_NONE;
 
 /* Update timings */
-//FIXME: upgrade this to solve millis() overflow. In 50 days from now it's going to reset to 0 !!!
 unsigned long last_lcd_refresh = 0;
 unsigned long lcd_refresh_interval = 250;
 unsigned long last_time_refresh = 0;
@@ -48,6 +51,8 @@ int temperature_air = 22;
 int temperature_water = 35;
 int humidity = 52;
 
+/* Time */
+
 /* 1-Wire addresses */
 byte air_temp_adress[8] = {0x10, 0xcd, 0xa4, 0x3e, 0x00, 0x00, 0x00, 0x5f}; //ID in real life
 byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //ID in real life
@@ -58,100 +63,87 @@ byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //
 void setup() {
   lcd.begin(16,2);
   lcd.setCursor(0, 0);
+  lcd.write("  Bienvenido!  ");
+  lcd.setCursor(0, 1);
+  lcd.write("Inicializando...");
+  
   Serial.begin(9600);
   
   buttons_init();
   
   //Time setup
   setTime(1,10,0,16,12,2014);
+  setSyncProvider(RTC.get);
   
-  // Setup main pages content       "_-_-_-_-_-_-_-_"
+  // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
   // sensor subpages
-  strcpy(sensor_pages[0].title_row , "  01/01/1970  >");
-  strcpy(sensor_pages[0].content_row,"     13:37     ");
+  strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
+  strcpy(sensor_pages[0].content_row,"     13:37      ");
   sensor_pages[0].on_click = &on_sensor_submenu_click;
-  sensor_pages[0].update = NULL;
   sensor_pages[0].draw = &draw_datetime;
   
-  strcpy(sensor_pages[1].title_row , "<    Ta=12oC   ");
-  strcpy(sensor_pages[1].content_row,"Tc=12oC  HU=34%");
+  strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
+  strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
   sensor_pages[1].on_click = &on_sensor_submenu_click;
-  sensor_pages[1].update = &no_update;
   sensor_pages[1].draw = &draw_temperature_humidity;
 
   //sensor main page                                   
-  strcpy(main_pages[0].title_row ,  "      Menu   > ");
-  strcpy(main_pages[0].content_row, "    Sensores   ");
+  strcpy(main_pages[0].title_row ,  "      Menu    ~ ");
+  strcpy(main_pages[0].content_row, "    Sensores    ");
   main_pages[0].on_click = &on_menu_click;
-  main_pages[0].update = NULL;
   main_pages[0].draw = NULL;
   main_pages[0].children_pages = &sensor_pages[0];
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
-  strcpy(main_pages[1].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[1].content_row, "   Consigna 0  ");
+  strcpy(main_pages[1].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[1].content_row, "   Consigna 0   ");
   main_pages[1].on_click = &on_menu_click;
-  main_pages[1].update = NULL;
   main_pages[1].draw = NULL;
   
-  strcpy(main_pages[2].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[2].content_row, "   Consigna 1  ");
+  strcpy(main_pages[2].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[2].content_row, "   Consigna 1   ");
   main_pages[2].on_click = &on_menu_click;
-  main_pages[2].update = NULL;
   main_pages[2].draw = NULL;
   
-  strcpy(main_pages[3].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[3].content_row, "   Consigna 2  ");
+  strcpy(main_pages[3].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[3].content_row, "   Consigna 2   ");
   main_pages[3].on_click = &on_menu_click;
-  main_pages[3].update = NULL;
   main_pages[3].draw = NULL;
   
-  strcpy(main_pages[4].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[4].content_row, "   Consigna 3  ");
+  strcpy(main_pages[4].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[4].content_row, "   Consigna 3   ");
   main_pages[4].on_click = &on_menu_click;
-  main_pages[4].update = NULL;
   main_pages[4].draw = NULL;
   
   // set date and time subpages
-  strcpy(setdatetime_pages[0].title_row , "  01/01/1970  >");
-  strcpy(setdatetime_pages[0].content_row,"     13:37     ");
-  setdatetime_pages[0].on_click = &on_sensor_submenu_click;
-  setdatetime_pages[0].update = NULL;
-  setdatetime_pages[0].draw = &draw_datetime;
+  strcpy(setdatetime_pages[0].title_row , " >01/>01/>1970  ");
+  strcpy(setdatetime_pages[0].content_row,"    >13:>37     ");
+  setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
+  setdatetime_pages[0].draw = NULL;
   
-  strcpy(setdatetime_pages[1].title_row , "<    Ta=12oC   ");
-  strcpy(setdatetime_pages[1].content_row,"Tw=12oC  HU=34%");
-  setdatetime_pages[1].on_click = &on_sensor_submenu_click;
-  setdatetime_pages[1].update = NULL;
-  setdatetime_pages[1].draw = draw_temperature_humidity;
-  
-  strcpy(main_pages[5].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[5].content_row, "  Fijar  hora  ");
+  strcpy(main_pages[5].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[5].content_row, "   Fijar  hora  ");
   main_pages[5].on_click = &on_menu_click;
-  main_pages[5].update = NULL;
   main_pages[5].draw = NULL;
   main_pages[5].children_pages = &setdatetime_pages[0];
   main_pages[5].children_length = SETDATETIME_PAGES_COUNT;
   
-  strcpy(main_pages[6].title_row ,  " <    Menu   > ");
-  strcpy(main_pages[6].content_row, "  Estadisticas ");
+  strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[6].content_row, "  Estadisticas  ");
   main_pages[6].on_click = &on_menu_click;
-  main_pages[6].update = NULL;
   main_pages[6].draw = NULL;
   
   // about subpage
-  strcpy(about_pages[0].title_row , "(C) rafael1193 ");
-  strcpy(about_pages[0].content_row," GPLv3 license ");
+  strcpy(about_pages[0].title_row , " (C) rafael1193 ");
+  strcpy(about_pages[0].content_row," GPLv3+ licence ");
   about_pages[0].on_click = &on_about_submenu_click;
-  about_pages[0].update = NULL;
   about_pages[0].draw = NULL;
   
   // about page
-  strcpy(main_pages[7].title_row ,  " <    Menu     ");
-  strcpy(main_pages[7].content_row, "  Acerca de... ");
+  strcpy(main_pages[7].title_row ,  "     Menu      ");
+  strcpy(main_pages[7].content_row, "   Acerca de... ");
   main_pages[7].on_click = &on_menu_click;
-  main_pages[7].update = NULL;
   main_pages[7].draw = NULL;
   main_pages[7].children_pages = &about_pages[0];
   main_pages[7].children_length = ABOUT_PAGES_COUNT;
@@ -198,6 +190,29 @@ void on_sensor_submenu_click(button but)
       break;
     case BUTTON_RIGHT:
       if(second_active_menu < SENSOR_PAGES_COUNT-1)
+      {
+        second_active_menu++;
+      }
+      break;
+    case BUTTON_RETURN:
+      second_active_menu = -1;
+    default:
+      break;
+  }
+}
+
+void on_setdatetime_submenu_click(button but)
+{
+  switch (but)
+  {
+    case BUTTON_LEFT:
+      if(second_active_menu > 0)
+      {
+        second_active_menu--;
+      }
+      break;
+    case BUTTON_RIGHT:
+      if(second_active_menu < SETDATETIME_PAGES_COUNT-1)
       {
         second_active_menu++;
       }
@@ -263,7 +278,7 @@ void draw_datetime()
     lcd.print("Hora:  "+ str_abajo);
 
     lcd.print("   ");
-    lcd.print(">");
+    lcd.print("~");
   
   return;
 }
@@ -278,7 +293,7 @@ void draw_temperature_humidity()
   String str_humidity = String(humidity, 10);
 
   //Arriba
-  str_arriba += "<    Ta=";
+  str_arriba += "    Ta=";
   if(str_air.length() <= 1) // Padding
   {
     str_arriba += "0";
@@ -319,8 +334,59 @@ void no_update()
   return;
 }
 
-void loop() {
- 
+void loop() 
+{
+  ////////////////////
+  // BUTTON PRESING //
+  //////////////////// 
+  
+  button_pressed = buttons_read();
+  Serial.write(button_pressed); // DEBUG:
+  if (button_pressed != 0){
+    if(second_active_menu != -1)
+    {
+      last_lcd_refresh = 0; //Force LCD refresh
+      main_pages[first_active_menu].children_pages[second_active_menu].on_click(button_pressed);
+    }else{
+      last_lcd_refresh = 0; //Force LCD refresh
+      main_pages[first_active_menu].on_click(button_pressed);
+    }
+
+  }
+  
+  ////////////////////
+  // WEATHER UPDATE //
+  ////////////////////
+  
+  //Serial.println(last_weather_refresh);
+  if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
+  {
+    //It's time to update weather info!
+    
+    temperature_air = round_macro(getTemp(air_temp_adress));
+    Serial.write("Ta|");
+    Serial.println(getTemp(air_temp_adress));
+    
+    temperature_water = round_macro(getTemp(water_temp_adress));
+    Serial.write("Tc|");
+    Serial.println(getTemp(water_temp_adress));
+    
+    //TODO: Humidity information
+    //TODO: Error handling
+    
+    last_weather_refresh = millis();
+  }
+  
+  /////////////////////
+  // CONSIGNA UPDATE //
+  /////////////////////
+  
+  //////////////////
+  // TIME REFRESH //
+  //////////////////
+  
+  
+  
   ////////////////////
   // SCREEN REFRESH //
   ////////////////////
@@ -328,19 +394,14 @@ void loop() {
   //Screen refresh rate must be limited
   if(abs(millis() - last_lcd_refresh) > lcd_refresh_interval)
   {
-    //Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
+    Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
     if(second_active_menu != -1)
     {
-      if(main_pages[first_active_menu].children_pages[second_active_menu].update != NULL)
-      {
-        main_pages[first_active_menu].children_pages[second_active_menu].update();
-      }
-      
       if(main_pages[first_active_menu].children_pages[second_active_menu].draw == NULL) // No se ha especificado una rutina de dibujado especial
       {
         lcd.clear();
         lcd.setCursor(0,0);
-        //Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
+        Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.setCursor(0,1);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].content_row);
@@ -369,47 +430,6 @@ void loop() {
     }
     last_lcd_refresh=millis();
   }
-  
-  ////////////////////
-  // BUTTON PRESING //
-  //////////////////// 
-  
-  button_pressed = buttons_read();
-  Serial.write(button_pressed); // DEBUG:
-  if (button_pressed != 0){
-    if(second_active_menu != -1)
-    {
-      last_lcd_refresh = 0; //Force LCD refresh
-      main_pages[first_active_menu].children_pages[second_active_menu].on_click(button_pressed);
-    }else{
-      last_lcd_refresh = 0; //Force LCD refresh
-      main_pages[first_active_menu].on_click(button_pressed);
-    }
-
-  }
-  
-  ////////////////////////
-  // TEMPERATURE UPDATE //
-  ////////////////////////
-  //Serial.println(last_weather_refresh);
-  if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
-  {
-    //It's time to update weather info!
-    
-    temperature_air = round_macro(getTemp(air_temp_adress));
-    Serial.write("Ta|");
-    Serial.println(getTemp(air_temp_adress));
-    
-    temperature_water = round_macro(getTemp(water_temp_adress));
-    Serial.write("Tc|");
-    Serial.println(getTemp(water_temp_adress));
-    
-    //TODO: Humidity information
-    //TODO: Error handling
-    
-    last_weather_refresh = millis();
-  }
-  
 }
 
 

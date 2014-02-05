@@ -22,7 +22,7 @@
 #define MAIN_PAGES_COUNT 8
 #define ABOUT_PAGES_COUNT 1
 #define SENSOR_PAGES_COUNT 2
-#define SETDATETIME_PAGES_COUNT 2
+#define SETDATETIME_PAGES_COUNT 1
 
 #define round_macro(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5)) //Temperature will never be near MAX_INT or MIN_INT, so there is no risk of overflow
 

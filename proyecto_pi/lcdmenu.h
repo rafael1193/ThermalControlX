@@ -24,7 +24,6 @@ typedef struct lcdmenu_page {
   char title_row[17];
   char content_row[17];
   void (*on_click)(button);
-  void (*update)();
   void (*draw)();
   lcdmenu_page* children_pages;
   int children_length;
