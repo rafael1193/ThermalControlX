@@ -31,6 +31,7 @@ lcdmenu_page main_pages[MAIN_PAGES_COUNT];
 lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
+lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
 
 /* Menu postion data */
 int first_active_menu = 5;
@@ -90,7 +91,7 @@ void setup() {
   sensor_pages[1].on_click = &on_sensor_submenu_click;
   sensor_pages[1].draw = &draw_temperature_humidity;
 
-  //sensor main page                                   
+  // sensor main page                                   
   strcpy(main_pages[0].title_row ,  "      Menu    ~ ");
   strcpy(main_pages[0].content_row, "    Sensores    ");
   main_pages[0].on_click = &on_menu_click;
@@ -98,29 +99,65 @@ void setup() {
   main_pages[0].children_pages = &sensor_pages[0];
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
+  // Order 0 submenu
+  strcpy(order_pages[0].title_row , "?00:?00 ?00:?00 ");
+  strcpy(order_pages[0].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[0].on_click = NULL;
+  order_pages[0].draw = NULL;
+  
+  // Order 0 menu
   strcpy(main_pages[1].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[1].content_row, "   Consigna 0   ");
   main_pages[1].on_click = &on_menu_click;
   main_pages[1].draw = NULL;
+  main_pages[1].children_pages = &order_pages[0];
+  main_pages[1].children_length =  1;
   
+  // Order 1 submenu
+  strcpy(order_pages[1].title_row , "?00:?00 ?00:?00 ");
+  strcpy(order_pages[1].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[1].on_click = NULL;
+  order_pages[1].draw = NULL;
+  
+  // Order 1 menu
   strcpy(main_pages[2].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[2].content_row, "   Consigna 1   ");
   main_pages[2].on_click = &on_menu_click;
   main_pages[2].draw = NULL;
+  main_pages[2].children_pages = &order_pages[1];
+  main_pages[2].children_length =  1;
   
+  // Order 2 submenu
+  strcpy(order_pages[2].title_row , "?00:?00 ?00:?00 ");
+  strcpy(order_pages[2].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[2].on_click = NULL;
+  order_pages[2].draw = NULL;
+  
+  // Order 2 menu
   strcpy(main_pages[3].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[3].content_row, "   Consigna 2   ");
   main_pages[3].on_click = &on_menu_click;
   main_pages[3].draw = NULL;
+  main_pages[3].children_pages = &order_pages[2];
+  main_pages[3].children_length =  1;
   
+  // Order 3 submenu
+  strcpy(order_pages[3].title_row , "?00:?00 ?00:?00 ");
+  strcpy(order_pages[3].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[3].on_click = NULL;
+  order_pages[3].draw = NULL;
+  
+  // Order 3 menu
   strcpy(main_pages[4].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[4].content_row, "   Consigna 3   ");
   main_pages[4].on_click = &on_menu_click;
   main_pages[4].draw = NULL;
+  main_pages[4].children_pages = &order_pages[3];
+  main_pages[4].children_length =  1;
   
   // set date and time subpages
-  strcpy(setdatetime_pages[0].title_row , " >01/>01/>1970  ");
-  strcpy(setdatetime_pages[0].content_row,"    >13:>37     ");
+  strcpy(setdatetime_pages[0].title_row , " ?01/?01/?1970  ");
+  strcpy(setdatetime_pages[0].content_row,"    ?13:?37     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
   setdatetime_pages[0].draw = &draw_setdatetime;
   
@@ -138,7 +175,8 @@ void setup() {
   
   // about subpage
   strcpy(about_pages[0].title_row , " (C) rafael1193 ");
-  strcpy(about_pages[0].content_row," GPLv3+ licence ");
+  strcpy(about_pages[0].content_row," GPLv3+ ");
+  strcat(about_pages[0].content_row, PROGRAM_VERSION);
   about_pages[0].on_click = &on_about_submenu_click;
   about_pages[0].draw = NULL;
   
