@@ -33,16 +33,15 @@
 
 #define round_macro(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5)) //Temperature will never be near MAX_INT or MIN_INT, so there is no risk of overflow
 
-typedef enum DAYOFWEEK
-{
-  DAY_SUNDAY = 1,
-  DAY_MONDAY = 2,
-  DAY_TUESDAY = 3,
-  DAY_WEDNESDAY = 4,
-  DAY_THURSDAY = 5,
-  DAY_FRIDAY = 6,
-  DAY_SATURDAY = 7
-};
+#define DAY_MONDAY 0
+#define DAY_TUESDAY 1
+#define DAY_WEDNESDAY 2
+#define DAY_THURSDAY 3
+#define DAY_FRIDAY 4
+#define DAY_SATURDAY 5
+#define DAY_SUNDAY 6
+
+char char_day[] = {'L', 'M', 'X', 'J', 'V', 'S', 'D'};
 
 typedef struct order_t {
   int start_hour;

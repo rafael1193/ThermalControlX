@@ -95,13 +95,13 @@ void setup() {
   // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
   // sensor subpages
-  strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
-  strcpy(sensor_pages[0].content_row,"     13:37      ");
+  //strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
+  //strcpy(sensor_pages[0].content_row,"     13:37      ");
   sensor_pages[0].on_click = &on_sensor_submenu_click;
   sensor_pages[0].draw = &draw_datetime;
   
-  strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
-  strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
+  //strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
+  //strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
   sensor_pages[1].on_click = &on_sensor_submenu_click;
   sensor_pages[1].draw = &draw_temperature_humidity;
 
@@ -114,10 +114,10 @@ void setup() {
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
   // Order 0 submenu
-  strcpy(order_pages[0].title_row , "?00:?00 ?00:?00 ");
-  strcpy(order_pages[0].content_row," ?L?M?X?J?V?S?D ");
-  order_pages[0].on_click = NULL;
-  order_pages[0].draw = NULL;
+  //strcpy(order_pages[0].title_row , "?00:?00 ?00:?00 ");
+  //strcpy(order_pages[0].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[0].on_click = &on_order_submenu_click;
+  order_pages[0].draw = draw_order;
   
   // Order 0 menu
   strcpy(main_pages[1].title_row ,  "     Menu    ~ ");
@@ -128,10 +128,10 @@ void setup() {
   main_pages[1].children_length =  1;
   
   // Order 1 submenu
-  strcpy(order_pages[1].title_row , "?00:?00 ?00:?00 ");
-  strcpy(order_pages[1].content_row," ?L?M?X?J?V?S?D ");
-  order_pages[1].on_click = NULL;
-  order_pages[1].draw = NULL;
+  //strcpy(order_pages[1].title_row , "?00:?00 ?00:?00 ");
+  //strcpy(order_pages[1].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[1].on_click = &on_order_submenu_click;
+  order_pages[1].draw = draw_order;
   
   // Order 1 menu
   strcpy(main_pages[2].title_row ,  "     Menu    ~ ");
@@ -142,10 +142,10 @@ void setup() {
   main_pages[2].children_length =  1;
   
   // Order 2 submenu
-  strcpy(order_pages[2].title_row , "?00:?00 ?00:?00 ");
-  strcpy(order_pages[2].content_row," ?L?M?X?J?V?S?D ");
-  order_pages[2].on_click = NULL;
-  order_pages[2].draw = NULL;
+  //strcpy(order_pages[2].title_row , "?00:?00 ?00:?00 ");
+  //strcpy(order_pages[2].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[2].on_click = &on_order_submenu_click;
+  order_pages[2].draw = draw_order;
   
   // Order 2 menu
   strcpy(main_pages[3].title_row ,  "     Menu    ~ ");
@@ -156,10 +156,10 @@ void setup() {
   main_pages[3].children_length =  1;
   
   // Order 3 submenu
-  strcpy(order_pages[3].title_row , "?00:?00 ?00:?00 ");
-  strcpy(order_pages[3].content_row," ?L?M?X?J?V?S?D ");
-  order_pages[3].on_click = NULL;
-  order_pages[3].draw = NULL;
+  //strcpy(order_pages[3].title_row , "?00:?00 ?00:?00 ");
+  //strcpy(order_pages[3].content_row," ?L?M?X?J?V?S?D ");
+  order_pages[3].on_click = &on_order_submenu_click;
+  order_pages[3].draw = draw_order;
   
   // Order 3 menu
   strcpy(main_pages[4].title_row ,  "     Menu    ~ ");
@@ -170,8 +170,8 @@ void setup() {
   main_pages[4].children_length =  1;
   
   // set date and time subpages
-  strcpy(setdatetime_pages[0].title_row , " ?01/?01/?1970  ");
-  strcpy(setdatetime_pages[0].content_row,"    ?13:?37     ");
+  //strcpy(setdatetime_pages[0].title_row , " ?01/?01/?1970  ");
+  //strcpy(setdatetime_pages[0].content_row,"    ?13:?37     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
   setdatetime_pages[0].draw = &draw_setdatetime;
   
@@ -260,6 +260,96 @@ void on_sensor_submenu_click(button but)
       }
       break;
     case BUTTON_RETURN:
+      second_active_menu = -1;
+    default:
+      break;
+  }
+}
+
+void on_order_submenu_click(button but)
+{
+  switch (but)
+  {
+    case BUTTON_LEFT:
+      if(tag > 0)
+      {
+        tag--;
+      }
+      break;
+    case BUTTON_RIGHT:
+      if(tag < 10)
+      {
+        tag++;
+      }
+      break;
+    case BUTTON_PLUS:
+      switch (tag)
+      {
+        case 0: //start hour
+          if(order[second_active_menu].start_hour < order[second_active_menu].end_hour) {++order[second_active_menu].start_hour;}
+          break;
+        case 1: //start minute
+          if(order[second_active_menu].start_minute < order[second_active_menu].end_minute) {++order[second_active_menu].start_minute;}
+          break;
+        case 2: //start hour
+          if(order[second_active_menu].end_hour < 23) {++order[second_active_menu].end_hour;}
+          break;
+        case 3: //start minute
+          if(order[second_active_menu].end_minute < 59) {++order[second_active_menu].end_minute;}
+          break;
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+          if(bitRead(order[second_active_menu].active_days, tag - 4) == 0)
+          {
+            bitSet(order[second_active_menu].active_days, tag - 4);
+          }
+          else
+          {
+            bitClear(order[second_active_menu].active_days, tag - 4);
+          }
+          break;
+      }
+      break;
+    case BUTTON_MINUS:
+      switch (tag)
+      {
+        case 0: //start minute
+          if(order[second_active_menu].start_minute > 0) {--order[second_active_menu].start_minute;}
+          break;
+        case 1: //start hour
+          if(order[second_active_menu].start_hour > 0) {--order[second_active_menu].start_hour;}
+          break;
+        case 2: //start minute
+          if(order[second_active_menu].end_minute - order[second_active_menu].start_minute) {--order[second_active_menu].end_minute;}
+          break;
+        case 3: //start hour
+          if(order[second_active_menu].end_hour > order[second_active_menu].start_hour) {--order[second_active_menu].end_hour;}
+          break;
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+          if(bitRead(order[second_active_menu].active_days, tag - 4) == 0)
+          {
+            bitSet(order[second_active_menu].active_days, tag - 4);
+          }
+          else
+          {
+            bitClear(order[second_active_menu].active_days, tag - 4);
+          }
+          break;
+      }
+      break;
+    case BUTTON_RETURN:
+      tag = 0;
       second_active_menu = -1;
     default:
       break;
@@ -386,6 +476,7 @@ void on_setdatetime_submenu_click(button but)
       break;
     case BUTTON_RETURN:
       second_active_menu = -1;
+      tag = 0;
       break;
     default:
       break;
@@ -648,6 +739,103 @@ void draw_setdatetime()
       break;
   }
   return;
+}
+
+/***
+  Draw order setter pages
+***/
+
+void draw_order()
+{
+  //second_active_menu means order currently being modified
+  String str_start_hour = String(order[second_active_menu].start_minute, 10);
+  String str_start_minute = String(order[second_active_menu].start_hour, 10);
+  String str_end_hour = String(order[second_active_menu].end_minute, 10);
+  String str_end_minute = String(order[second_active_menu].end_hour, 10);
+  
+  //        "0123456789012345"
+  lcd.print(" 00: 00  00: 00 ");
+  lcd.print("  _ _ _ _ _ _ _ ");
+
+  if(str_start_hour.length() <= 1) // Padding
+  {
+    lcd.setCursor(2, 0);
+    lcd.print(str_start_hour);
+  }else
+  {
+    lcd.setCursor(1, 0);
+    lcd.print(str_start_hour);
+  }
+  
+  if(str_start_minute.length() <= 1) // Padding
+  {
+    lcd.setCursor(6, 0);
+    lcd.print(str_start_minute);
+  }
+  else
+  {
+    lcd.setCursor(5, 0);
+    lcd.print(str_start_minute);
+  }
+  
+  if(str_end_hour.length() <= 1) // Padding
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_end_hour);
+  }else
+  {
+    lcd.setCursor(9, 0);
+    lcd.print(str_end_hour);
+  }
+  
+  if(str_end_minute.length() <= 1) // Padding
+  {
+    lcd.setCursor(14, 0);
+    lcd.print(str_end_minute);
+  }
+  else
+  {
+    lcd.setCursor(13, 0);
+    lcd.print(str_end_minute);
+  }
+  
+  for(int d = 0; d < 7; ++d) 
+  {
+    lcd.setCursor(1 + d * 2, 1);
+    if(bitRead(order[second_active_menu].active_days, d) == 1)
+    {
+      lcd.print(char_day[d]);
+    }
+    else 
+    {
+      lcd.print('_');
+    }
+  }
+  
+  switch (tag)
+  {
+    case 0:
+    case 1:
+      lcd.setCursor(0 + tag * 4, 0);
+      lcd.write(INDEX_MARK);
+      break;
+    case 2:
+    case 3:
+      lcd.setCursor(8 + (tag-2) * 4, 0);
+      lcd.write(INDEX_MARK);
+      break;
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+      lcd.setCursor(0 + (tag-4) * 2, 1);
+      lcd.write(INDEX_MARK);
+      break;
+  }
+  return; 
 }
 
 /*******************/
