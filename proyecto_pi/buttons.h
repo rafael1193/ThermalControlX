@@ -1,5 +1,5 @@
 /*
- * Proyecto PI. A boiler inteligent control system
+ * Proyecto PI. An inteligent boiler control system
  * Copyright (C) 2014  Rafael Bailón-Ruiz <rafaelbailon en ieee punto org> 
  *
  * This program is free software: you can redistribute it and/or modify

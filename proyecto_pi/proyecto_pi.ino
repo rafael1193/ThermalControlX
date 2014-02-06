@@ -1,5 +1,5 @@
 /* 
- * Proyecto PI. A boiler inteligent control system
+ * Proyecto PI. An inteligent boiler control system
  * Copyright (C) 2014  Rafael Bailón-Ruiz <rafaelbailon en ieee punto org> 
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,6 @@
 #include <Wire.h>
 #include <DS1307RTC.h>
 
-
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 lcdmenu_page main_pages[MAIN_PAGES_COUNT];
 lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
@@ -43,9 +42,11 @@ button button_pressed = BUTTON_NONE;
 unsigned long last_lcd_refresh = 0;
 unsigned long lcd_refresh_interval = 250;
 unsigned long last_time_refresh = 0;
-unsigned long time_refresh_interval = 30000;
+unsigned long time_refresh_interval = 300000; // 5  minutes
 unsigned long last_weather_refresh = 0;
-unsigned long weather_refresh_interval = 60000; //Each minute
+unsigned long weather_refresh_interval = 60000; // Each minute
+unsigned long last_order_refresh = 0;
+unsigned long order_refresh_interval = 60000; // Each minute
 
 /* Weather */
 int temperature_air = 22;
@@ -63,7 +64,7 @@ byte water_temp_adress[8] = {0x10, 0xcd, 0xc7, 0x70, 0x00, 0x00, 0x00, 0xf5}; //
 //byte tube_temp_adress[8] = {0x10, 0x3e, 0xa4, 0xcd, 0x02, 0x08, 0x00, 0xB4}; //ID in real life
 
 /* Boiler */
-
+int relay_status = LOW;
 
 /*****************/
 /* setup methods */
@@ -85,12 +86,23 @@ void setup() {
   
   //Relay setup
   pinMode(RELAY_PIN, OUTPUT);
-  //digitalWrite(RELAY_PIN, HIGH);
   
   //Time setup
   setTime(1,10,0,16,12,2014);
   setSyncProvider(RTC.get);
   setSyncInterval(300); //5 minutes
+  
+  
+  //////////////// DEBUG ///////////////
+  
+  order[0].start_hour = 0;
+  order[0].start_minute = 0;
+  order[0].end_hour = 23;
+  order[0].end_minute = 59;
+  order[0].air_temperature = 28;
+  order[0].active_days = -1; //All
+  
+  //////////////////////////////////////
   
   // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
@@ -114,8 +126,8 @@ void setup() {
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
   // Order 0 submenu
-  //strcpy(order_pages[0].title_row , "?00:?00 ?00:?00 ");
-  //strcpy(order_pages[0].content_row," ?L?M?X?J?V?S?D ");
+  //strcpy(order_pages[0].title_row , " ?00:?00?00:?00 ");
+  //strcpy(order_pages[0].content_row,"LMXJVSD   ?20oC ");
   order_pages[0].on_click = &on_order_submenu_click;
   order_pages[0].draw = draw_order;
   
@@ -206,6 +218,7 @@ void setup() {
   last_weather_refresh = weather_refresh_interval;
   last_lcd_refresh = lcd_refresh_interval;
   last_time_refresh = time_refresh_interval;
+  last_order_refresh = order_refresh_interval;
   
 }
 
@@ -268,6 +281,7 @@ void on_sensor_submenu_click(button but)
 
 void on_order_submenu_click(button but)
 {
+  int check_high = order[second_active_menu].end_hour * 60 + order[second_active_menu].end_minute > order[second_active_menu].start_hour * 60 + order[second_active_menu].start_minute;
   switch (but)
   {
     case BUTTON_LEFT:
@@ -277,7 +291,7 @@ void on_order_submenu_click(button but)
       }
       break;
     case BUTTON_RIGHT:
-      if(tag < 10)
+      if(tag < 11)
       {
         tag++;
       }
@@ -286,10 +300,10 @@ void on_order_submenu_click(button but)
       switch (tag)
       {
         case 0: //start hour
-          if(order[second_active_menu].start_hour < order[second_active_menu].end_hour) {++order[second_active_menu].start_hour;}
+          if(check_high) {++order[second_active_menu].start_hour;}
           break;
         case 1: //start minute
-          if(order[second_active_menu].start_minute < order[second_active_menu].end_minute) {++order[second_active_menu].start_minute;}
+          if(check_high) {++order[second_active_menu].start_minute;}
           break;
         case 2: //start hour
           if(order[second_active_menu].end_hour < 23) {++order[second_active_menu].end_hour;}
@@ -304,31 +318,27 @@ void on_order_submenu_click(button but)
         case 8:
         case 9:
         case 10:
-          if(bitRead(order[second_active_menu].active_days, tag - 4) == 0)
-          {
-            bitSet(order[second_active_menu].active_days, tag - 4);
-          }
-          else
-          {
-            bitClear(order[second_active_menu].active_days, tag - 4);
-          }
+          bitSet(order[second_active_menu].active_days, tag - 4);
+          break;
+        case 11:
+          if(order[second_active_menu].air_temperature < 30) {++order[second_active_menu].air_temperature;}
           break;
       }
       break;
     case BUTTON_MINUS:
       switch (tag)
       {
-        case 0: //start minute
-          if(order[second_active_menu].start_minute > 0) {--order[second_active_menu].start_minute;}
-          break;
-        case 1: //start hour
+        case 0: //start hour
           if(order[second_active_menu].start_hour > 0) {--order[second_active_menu].start_hour;}
           break;
-        case 2: //start minute
-          if(order[second_active_menu].end_minute - order[second_active_menu].start_minute) {--order[second_active_menu].end_minute;}
+        case 1: //start minute
+          if(order[second_active_menu].start_minute > 0) {--order[second_active_menu].start_minute;}
           break;
-        case 3: //start hour
-          if(order[second_active_menu].end_hour > order[second_active_menu].start_hour) {--order[second_active_menu].end_hour;}
+        case 2: //start hour
+          if(check_high) {--order[second_active_menu].end_hour;}
+          break;
+        case 3: //start minute
+          if(check_high) {--order[second_active_menu].end_minute;}
           break;
         case 4:
         case 5:
@@ -337,20 +347,17 @@ void on_order_submenu_click(button but)
         case 8:
         case 9:
         case 10:
-          if(bitRead(order[second_active_menu].active_days, tag - 4) == 0)
-          {
-            bitSet(order[second_active_menu].active_days, tag - 4);
-          }
-          else
-          {
-            bitClear(order[second_active_menu].active_days, tag - 4);
-          }
+          bitClear(order[second_active_menu].active_days, tag - 4);
+          break;
+        case 11:
+          if(order[second_active_menu].air_temperature > 0) {--order[second_active_menu].air_temperature;}
           break;
       }
       break;
     case BUTTON_RETURN:
       tag = 0;
       second_active_menu = -1;
+      last_order_refresh = order_refresh_interval;
     default:
       break;
   }
@@ -477,6 +484,7 @@ void on_setdatetime_submenu_click(button but)
     case BUTTON_RETURN:
       second_active_menu = -1;
       tag = 0;
+      last_weather_refresh = weather_refresh_interval;
       break;
     default:
       break;
@@ -599,8 +607,6 @@ void draw_datetime()
 
     str_arriba.toCharArray(sensor_pages[0].title_row, 15);
     str_abajo.toCharArray(sensor_pages[0].content_row, 15);
-    Serial.println(sensor_pages[0].title_row);
-    Serial.println(sensor_pages[0].content_row);
     
     lcd.print("Fecha:"+ str_arriba);
     lcd.setCursor(0, 1);
@@ -748,14 +754,16 @@ void draw_setdatetime()
 void draw_order()
 {
   //second_active_menu means order currently being modified
-  String str_start_hour = String(order[second_active_menu].start_minute, 10);
-  String str_start_minute = String(order[second_active_menu].start_hour, 10);
-  String str_end_hour = String(order[second_active_menu].end_minute, 10);
-  String str_end_minute = String(order[second_active_menu].end_hour, 10);
+  String str_start_hour = String(order[second_active_menu].start_hour, 10);
+  String str_start_minute = String(order[second_active_menu].start_minute, 10);
+  String str_end_hour = String(order[second_active_menu].end_hour, 10);
+  String str_end_minute = String(order[second_active_menu].end_minute, 10);
+  String str_air_temperature = String(order[second_active_menu].air_temperature, 10);
   
   //        "0123456789012345"
   lcd.print(" 00: 00  00: 00 ");
-  lcd.print("  _ _ _ _ _ _ _ ");
+  lcd.setCursor(0, 1);
+  lcd.print(" _______   00oC ");
 
   if(str_start_hour.length() <= 1) // Padding
   {
@@ -801,7 +809,8 @@ void draw_order()
   
   for(int d = 0; d < 7; ++d) 
   {
-    lcd.setCursor(1 + d * 2, 1);
+    lcd.setCursor(1 + d * 1, 1);
+    
     if(bitRead(order[second_active_menu].active_days, d) == 1)
     {
       lcd.print(char_day[d]);
@@ -810,6 +819,17 @@ void draw_order()
     {
       lcd.print('_');
     }
+  }
+  
+  if(str_air_temperature.length() <= 1) // Padding
+  {
+    lcd.setCursor(12, 1);
+    lcd.print(str_air_temperature);
+  }
+  else
+  {
+    lcd.setCursor(11, 1);
+    lcd.print(str_air_temperature);
   }
   
   switch (tag)
@@ -831,7 +851,14 @@ void draw_order()
     case 8:
     case 9:
     case 10:
-      lcd.setCursor(0 + (tag-4) * 2, 1);
+      if(bitRead(millis(),9) == 0) //Sort of character blink mechanism
+      {
+        lcd.setCursor(tag-3, 1);
+        lcd.write(INDEX_MARK);
+      }
+      break;
+    case 11:
+      lcd.setCursor(10, 1);
       lcd.write(INDEX_MARK);
       break;
   }
@@ -852,7 +879,7 @@ void loop()
   //////////////////// 
   
   button_pressed = buttons_read();
-  Serial.write(button_pressed); // DEBUG:
+  //Serial.write(button_pressed); // DEBUG:
   if (button_pressed != 0){
     if(second_active_menu != -1)
     {
@@ -874,11 +901,10 @@ void loop()
   if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
   {
     //It's time to update weather info!
-    
     temperature_air = round_macro(getTemp(air_temp_adress));
     Serial.write("Ta|");
     Serial.println(getTemp(air_temp_adress));
-    
+
     temperature_water = round_macro(getTemp(water_temp_adress));
     Serial.write("Tc|");
     Serial.println(getTemp(water_temp_adress));
@@ -890,18 +916,64 @@ void loop()
   }
   
   
-  /////////////////////
-  // CONSIGNA UPDATE //
-  /////////////////////
-  
-  
-  
-  
   //////////////////
-  // TIME REFRESH //
+  // ORDER UPDATE //
   //////////////////
   
-  
+  if(abs(millis() - last_order_refresh) > order_refresh_interval) 
+  {
+//    time_t time_now = now();
+//    time_t time_start = time_now; // initialization
+//    time_t time_end = time_now; // initialization
+//    tmElements_t start_elements;
+//    tmElements_t end_elements;
+//    breakTime(time_now, start_elements);
+//    breakTime(time_now, end_elements);
+    tmElements_t tm_now;
+    breakTime(now(), tm_now);
+    
+    int relay_status = LOW;
+    
+    //It's time to check orders!
+    for(int i = 0; i < NUM_ORDERS; ++i)
+    {
+//      // We build an UNIX time for start and end times
+//      start_elements.Hour = order[i].start_hour;
+//      start_elements.Minute = order[i].start_minute;
+//      end_elements.Hour = order[i].end_hour;
+//      end_elements.Minute = order[i].end_minute;
+//      
+//      time_start = makeTime(start_elements);
+//      time_end = makeTime(end_elements);
+      int time_check = (order[i].start_hour * 60 + order[i].start_minute < tm_now.Hour * 60 + tm_now.Minute) && (tm_now.Hour * 60 + tm_now.Minute < order[i].end_hour * 60 + order[i].end_minute);
+      int week_day_check = 0; 
+      Serial.println(tm_now.Wday);
+      Serial.println(time_check);
+      if(tm_now.Wday == 1) //If sunday (Yes, sunday is day 1...)
+      {
+        week_day_check = bitRead(order[i].active_days, 6);
+      } else
+      {
+        week_day_check = bitRead(order[i].active_days, tm_now.Wday - 2);
+      }
+      // If we are in time span
+      if(week_day_check)
+      {
+        if(time_check) 
+        {
+          if(temperature_air < order[i].air_temperature)
+          {
+            relay_status = HIGH;
+            break; 
+            Serial.println("Caldera: ON");
+          }
+        }
+      }
+    }
+    
+    digitalWrite(RELAY_PIN, relay_status);
+    last_order_refresh = millis();
+  }
   
   
   ////////////////////
@@ -911,14 +983,14 @@ void loop()
   //Screen refresh rate must be limited
   if(abs(millis() - last_lcd_refresh) > lcd_refresh_interval)
   {
-    Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
+    //Serial.write(0x30+first_active_menu);Serial.write("  ");Serial.write(0x30+second_active_menu);Serial.write('\n');
     if(second_active_menu != -1)
     {
       if(main_pages[first_active_menu].children_pages[second_active_menu].draw == NULL) // No se ha especificado una rutina de dibujado especial
       {
         lcd.clear();
         lcd.setCursor(0,0);
-        Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
+        //Serial.println(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].title_row);
         lcd.setCursor(0,1);
         lcd.print(main_pages[first_active_menu].children_pages[second_active_menu].content_row);
