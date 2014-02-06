@@ -95,12 +95,12 @@ void setup() {
   
   //////////////// DEBUG ///////////////
   
-  order[0].start_hour = 0;
-  order[0].start_minute = 0;
-  order[0].end_hour = 23;
-  order[0].end_minute = 59;
-  order[0].air_temperature = 28;
-  order[0].active_days = -1; //All
+//  order[0].start_hour = 0;
+//  order[0].start_minute = 0;
+//  order[0].end_hour = 23;
+//  order[0].end_minute = 59;
+//  order[0].air_temperature = 28;
+//  order[0].active_days = -1; //All
   
   //////////////////////////////////////
   
@@ -357,7 +357,6 @@ void on_order_submenu_click(button but)
     case BUTTON_RETURN:
       tag = 0;
       second_active_menu = -1;
-      last_order_refresh = order_refresh_interval;
     default:
       break;
   }
@@ -484,7 +483,6 @@ void on_setdatetime_submenu_click(button but)
     case BUTTON_RETURN:
       second_active_menu = -1;
       tag = 0;
-      last_weather_refresh = weather_refresh_interval;
       break;
     default:
       break;
@@ -900,14 +898,16 @@ void loop()
   //Serial.println(last_weather_refresh);
   if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
   {
-    //It's time to update weather info!
-    temperature_air = round_macro(getTemp(air_temp_adress));
-    Serial.write("Ta|");
-    Serial.println(getTemp(air_temp_adress));
+    //It's time to update weather info! 
+    float t_air_f = getTemp(air_temp_adress);
+    temperature_air = round_macro(t_air_f);
+    Serial.print("ta|");
+    Serial.println(t_air_f);
 
-    temperature_water = round_macro(getTemp(water_temp_adress));
-    Serial.write("Tc|");
-    Serial.println(getTemp(water_temp_adress));
+    float t_wat_f = getTemp(water_temp_adress);
+    temperature_water = round_macro(t_wat_f);
+    Serial.print("tc|");
+    Serial.println(t_wat_f);
     
     //TODO: Humidity information
     //TODO: Error handling
@@ -922,33 +922,33 @@ void loop()
   
   if(abs(millis() - last_order_refresh) > order_refresh_interval) 
   {
-//    time_t time_now = now();
-//    time_t time_start = time_now; // initialization
-//    time_t time_end = time_now; // initialization
-//    tmElements_t start_elements;
-//    tmElements_t end_elements;
-//    breakTime(time_now, start_elements);
-//    breakTime(time_now, end_elements);
     tmElements_t tm_now;
     breakTime(now(), tm_now);
     
     int relay_status = LOW;
+    int rec_act = 0;
     
     //It's time to check orders!
     for(int i = 0; i < NUM_ORDERS; ++i)
     {
-//      // We build an UNIX time for start and end times
-//      start_elements.Hour = order[i].start_hour;
-//      start_elements.Minute = order[i].start_minute;
-//      end_elements.Hour = order[i].end_hour;
-//      end_elements.Minute = order[i].end_minute;
-//      
-//      time_start = makeTime(start_elements);
-//      time_end = makeTime(end_elements);
       int time_check = (order[i].start_hour * 60 + order[i].start_minute < tm_now.Hour * 60 + tm_now.Minute) && (tm_now.Hour * 60 + tm_now.Minute < order[i].end_hour * 60 + order[i].end_minute);
       int week_day_check = 0; 
-      Serial.println(tm_now.Wday);
-      Serial.println(time_check);
+      
+      ///////////////////DEBUG///////////////////
+      
+//      Serial.println("s_h");
+//      Serial.println(order[i].start_hour);
+//      Serial.println("s_m");
+//      Serial.println(order[i].start_minute);
+//      Serial.println("e_h");
+//      Serial.println(order[i].end_hour);
+//      Serial.println("e_m");
+//      Serial.println(order[i].end_minute);
+//      Serial.println(tm_now.Wday);
+//      Serial.println(time_check);
+        
+      ///////////////////////////////////////////
+      
       if(tm_now.Wday == 1) //If sunday (Yes, sunday is day 1...)
       {
         week_day_check = bitRead(order[i].active_days, 6);
@@ -963,13 +963,20 @@ void loop()
         {
           if(temperature_air < order[i].air_temperature)
           {
-            relay_status = HIGH;
-            break; 
-            Serial.println("Caldera: ON");
+            if(rec_act == 0)
+            {
+              relay_status = HIGH;
+              rec_act = 1;
+            }
           }
         }
       }
     }
+    
+    Serial.print("ti|");
+    Serial.println(now());
+    Serial.print("ca|");
+    Serial.println(relay_status);
     
     digitalWrite(RELAY_PIN, relay_status);
     last_order_refresh = millis();

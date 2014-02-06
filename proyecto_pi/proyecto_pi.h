@@ -19,7 +19,7 @@
 #ifndef PROYECTO_PI_H
 #define PROYECTO_PI_H
 
-#define PROGRAM_VERSION "v0.1.00"
+#define PROGRAM_VERSION "v0.2.0"
 
 #define RELAY_PIN 9
 
