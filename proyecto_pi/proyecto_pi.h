@@ -23,7 +23,7 @@
 
 #define RELAY_PIN 9
 
-#define MAIN_PAGES_COUNT 8
+#define MAIN_PAGES_COUNT 7
 #define ABOUT_PAGES_COUNT 1
 #define SENSOR_PAGES_COUNT 2
 #define SETDATETIME_PAGES_COUNT 1
@@ -42,7 +42,7 @@
 #define DAY_SATURDAY 5
 #define DAY_SUNDAY 6
 
-char char_day[] = {'L', 'M', 'X', 'J', 'V', 'S', 'D'};
+const char char_day[] = {'L', 'M', 'X', 'J', 'V', 'S', 'D'};
 
 typedef struct order_t {
   int start_hour;

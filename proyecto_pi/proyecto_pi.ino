@@ -32,7 +32,7 @@ lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
-lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
+//lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
 
 /* Menu postion data */
 int first_active_menu = 0;
@@ -242,18 +242,18 @@ void setup() {
   main_pages[5].children_pages = &setdatetime_pages[0];
   main_pages[5].children_length = SETDATETIME_PAGES_COUNT;
   
-  // statistics subpages
-  strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
-  strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
-  statistics_pages[0].on_click = &on_about_submenu_click; //Return only
-  statistics_pages[0].draw = &draw_statistics;
+//  // statistics subpages
+//  strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
+//  strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
+//  statistics_pages[0].on_click = &on_about_submenu_click; //Return only
+//  statistics_pages[0].draw = &draw_statistics;
   
-  strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
-  strcpy(main_pages[6].content_row, "  Estadisticas  ");
-  main_pages[6].on_click = &on_menu_click;
-  main_pages[6].draw = NULL;
-  main_pages[6].children_pages = &statistics_pages[0];
-  main_pages[6].children_length = STATISTICS_PAGES_COUNT;
+//  strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
+//  strcpy(main_pages[6].content_row, "  Estadisticas  ");
+//  main_pages[6].on_click = &on_menu_click;
+//  main_pages[6].draw = NULL;
+//  main_pages[6].children_pages = &statistics_pages[0];
+//  main_pages[6].children_length = STATISTICS_PAGES_COUNT;
   
   // about subpage
   strcpy(about_pages[0].title_row , " (C) rafael1193 ");
@@ -263,12 +263,12 @@ void setup() {
   about_pages[0].draw = NULL;
   
   // about page
-  strcpy(main_pages[7].title_row ,  "     Menu      ");
-  strcpy(main_pages[7].content_row, "   Acerca de... ");
-  main_pages[7].on_click = &on_menu_click;
-  main_pages[7].draw = NULL;
-  main_pages[7].children_pages = &about_pages[0];
-  main_pages[7].children_length = ABOUT_PAGES_COUNT;
+  strcpy(main_pages[6].title_row ,  "     Menu      ");
+  strcpy(main_pages[6].content_row, "   Acerca de... ");
+  main_pages[6].on_click = &on_menu_click;
+  main_pages[6].draw = NULL;
+  main_pages[6].children_pages = &about_pages[0];
+  main_pages[6].children_length = ABOUT_PAGES_COUNT;
   
   //Update everything
   last_weather_refresh = weather_refresh_interval;
@@ -311,8 +311,6 @@ void on_menu_click(button but)
         case 3:
         case 4:
           second_active_menu = first_active_menu - 1;
-          //Serial.print("dg|second ");
-          //Serial.println(second_active_menu);
           break;
         default:
           second_active_menu = 0;
@@ -425,8 +423,6 @@ void on_order_submenu_click(button but)
       }
       break;
     case BUTTON_RETURN:
-      //Serial.print("dg|return menu ");
-      //Serial.println(second_active_menu);
       write_order(second_active_menu); //Update order data on eeprom
       tag = 0;
       second_active_menu = -1;
@@ -608,7 +604,6 @@ int days_in_month(int mon, int ye)
     case 2: 
       if(islapyear(ye) == true) //February
       {
-        //Serial.write("bisiesto!");
         return 29;
       } else 
       {
@@ -636,10 +631,10 @@ void write_order(int n)
 {
   if(0 <= n && n <= NUM_ORDERS - 1)
   {
-    //Serial.print("dg|");
-    //Serial.print("page ");
-    //Serial.print(n);
-    //Serial.println(" written");
+    Serial.print("dg|");
+    Serial.print("page ");
+    Serial.print(n);
+    Serial.println(" written");
     order_t *ptr = &order[n];
     i2c_eeprom_write_page(ORDER_ADDR + n * sizeof(order_t), (byte*)ptr, sizeof(order_t));
   }
@@ -661,10 +656,10 @@ void draw_datetime()
   String str_hour = String(hour(), 10);
   String str_minute = String(minute(), 10);
 
-  //lcd.setCursor(0, 0);
-  //lcd.print(sensor_pages[0].title_row);
-  //lcd.setCursor(0, 1);
-  //lcd.print(sensor_pages[0].content_row);
+  lcd.setCursor(0, 0);
+  lcd.print(sensor_pages[0].title_row);
+  lcd.setCursor(0, 1);
+  lcd.print(sensor_pages[0].content_row);
   
   if(str_day.length() <= 1) // Padding
   {
@@ -704,12 +699,12 @@ void draw_datetime()
   
   if(str_minute.length() <= 1) // Padding
   {
-    lcd.setCursor(10, 0);
+    lcd.setCursor(10, 1);
     lcd.print(str_minute);
   }
   else
   {
-    lcd.setCursor(9, 0);
+    lcd.setCursor(9, 1);
     lcd.print(str_minute);
   }
 
@@ -721,7 +716,6 @@ void draw_datetime()
 ***/
 void draw_temperature_humidity()
 {
-//  Serial.println("he llegao");
   String str_arriba = "";
   String str_abajo = "";
   String str_air = String(temperature_air, 10);
@@ -755,8 +749,7 @@ void draw_temperature_humidity()
 
   str_arriba.toCharArray(sensor_pages[1].title_row, 15);
   str_abajo.toCharArray(sensor_pages[1].content_row, 15);
-//  Serial.println(sensor_pages[1].title_row);
-//  Serial.println(sensor_pages[1].content_row);
+
   lcd.setCursor(0,0);
   lcd.print(str_arriba);
   lcd.setCursor(0, 1);
@@ -775,7 +768,7 @@ void draw_setdatetime()
   String str_year = String(year(), 10);
   String str_hour = String(hour(), 10);
   String str_minute = String(minute(), 10);
-  //        "01234567890123456"
+
   lcd.setCursor(0,0);
   lcd.print("  00/ 00/ 0000  ");
   lcd.setCursor(0,1);
@@ -965,36 +958,36 @@ void draw_order()
   return; 
 }
 
-void draw_statistics ()
-{
-  String str_max = String(max_temp_air, 10);
-  String str_min = String(min_temp_air, 10);
-  lcd.setCursor(0, 0);
-  lcd.print(statistics_pages[0].title_row);
-  lcd.setCursor(0, 1);
-  lcd.print(statistics_pages[0].content_row);
-  if(str_max.length() <= 1) // Padding
-  {
-    lcd.setCursor(11, 0);
-    lcd.print(str_max);
-  }
-  else
-  {
-    lcd.setCursor(10, 0);
-    lcd.print(str_max);
-  }
-  
-  if(str_min.length() <= 1) // Padding
-  {
-    lcd.setCursor(11, 0);
-    lcd.print(str_min);
-  }
-  else
-  {
-    lcd.setCursor(10, 0);
-    lcd.print(str_min);
-  }
-}
+//void draw_statistics ()
+//{
+//  String str_max = String(max_temp_air, 10);
+//  String str_min = String(min_temp_air, 10);
+//  lcd.setCursor(0, 0);
+//  lcd.print(statistics_pages[0].title_row);
+//  lcd.setCursor(0, 1);
+//  lcd.print(statistics_pages[0].content_row);
+//  if(str_max.length() <= 1) // Padding
+//  {
+//    lcd.setCursor(11, 0);
+//    lcd.print(str_max);
+//  }
+//  else
+//  {
+//    lcd.setCursor(10, 0);
+//    lcd.print(str_max);
+//  }
+//  
+//  if(str_min.length() <= 1) // Padding
+//  {
+//    lcd.setCursor(11, 0);
+//    lcd.print(str_min);
+//  }
+//  else
+//  {
+//    lcd.setCursor(10, 0);
+//    lcd.print(str_min);
+//  }
+//}
 
 /*******************/
 /* looping methods */
@@ -1035,8 +1028,8 @@ void loop()
     
     float t_air_f = getTemp(air_temp_adress);
     temperature_air = round_macro(t_air_f);
-    //Serial.print("ta|");
-    //Serial.println(t_air_f);
+    Serial.print("ta|");
+    Serial.println(t_air_f);
     
     if(temperature_air > max_temp_air)
     {
@@ -1050,8 +1043,8 @@ void loop()
     last_temperature_water = temperature_water;
     float t_wat_f = getTemp(water_temp_adress);
     temperature_water = round_macro(t_wat_f);
-    //Serial.print("tc|");
-    //Serial.println(t_wat_f);
+    Serial.print("tc|");
+    Serial.println(t_wat_f);
     
     //TODO: Humidity information
     //TODO: Error handling
@@ -1113,8 +1106,8 @@ void loop()
             {
               if(last_temperature_water == temperature_water)
               {
-                //Serial.print("water temp ");
-                //Serial.println(last_temperature_water);
+                Serial.print("water temp ");
+                Serial.println(last_temperature_water);
                 relay_status == LOW;
                 rec_act = 1;
               }
@@ -1125,8 +1118,8 @@ void loop()
             {
               relay_status = HIGH;
               rec_act = 1;
-              //Serial.print("or|");
-              //Serial.println(i);
+              Serial.print("or|");
+              Serial.println(i);
             }
           }
         }
