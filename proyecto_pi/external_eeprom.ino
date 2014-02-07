@@ -37,6 +37,7 @@ void i2c_eeprom_write_byte(unsigned int eeaddress, byte data)
   Wire.write((int)(eeaddress & 0xFF)); // LSB
   Wire.write(rdata);
   Wire.endTransmission();
+  delay(5);
 }
 
 // WARNING: address is a page address, 6-bit end will wrap around
@@ -48,8 +49,11 @@ void i2c_eeprom_write_page(unsigned int eeaddresspage, byte* data, byte length)
   Wire.write((int)(eeaddresspage & 0xFF)); // LSB
   byte c;
   for ( c = 0; c < length; c++)
+  {
     Wire.write(data[c]);
+  }
   Wire.endTransmission();
+  delay(5);
 }
 
 byte i2c_eeprom_read_byte(unsigned int eeaddress)
@@ -60,8 +64,9 @@ byte i2c_eeprom_read_byte(unsigned int eeaddress)
   Wire.write((int)(eeaddress & 0xFF)); // LSB
   Wire.endTransmission();
   Wire.requestFrom(EEPROM_DEVICE_ADDRESS,1);
-  if (Wire.available()) rdata = Wire.read();
+  if (Wire.available()) {rdata = Wire.read();}
   return rdata;
+  delay(5);
 }
 
 // maybe let's not read more than 30 or 32 bytes at a time!
@@ -74,5 +79,8 @@ void i2c_eeprom_read_buffer(unsigned int eeaddress, byte *buffer, int length)
   Wire.requestFrom(EEPROM_DEVICE_ADDRESS,length);
   int c = 0;
   for ( c = 0; c < length; c++ )
+  {
     if (Wire.available()) buffer[c] = Wire.read();
+  }
+  delay(5);
 }

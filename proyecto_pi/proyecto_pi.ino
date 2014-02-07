@@ -43,19 +43,17 @@ button button_pressed = BUTTON_NONE;
 /* Update timings */
 unsigned long last_lcd_refresh = 0;
 const unsigned long lcd_refresh_interval = 250;
-unsigned long last_time_refresh = 0;
-const unsigned long time_refresh_interval = 300000; // 5  minutes
 unsigned long last_weather_refresh = 0;
 const unsigned long weather_refresh_interval = 60000; // Each minute
 unsigned long last_boiler_refresh = 0;
-const unsigned long boiler_refresh_interval = 6000; // 10 minutes //FIXME
+const unsigned long boiler_refresh_interval = 60000; // Each 10 minutes //FIXME for 10 minutes
 unsigned long last_order_refresh = 0;
 const unsigned long order_refresh_interval = 60000; // Each minute
 
 /* Weather */
 int temperature_air = 22;
 int temperature_water = 35;
-int last_temperature_water = 35;
+int top_temperature_water = 35;
 int humidity = 99;
 int max_temp_air = 10;
 int min_temp_air = 10;
@@ -135,7 +133,7 @@ void setup() {
     for(int j = 0; j < NUM_ORDERS; ++j)
     {
       order_t *ptr = &order[j];
-      i2c_eeprom_read_buffer(ORDER_ADDR + j * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+      i2c_eeprom_read_buffer(ORDER_ADDR + j * 12, (byte*)ptr, 12);
     }
   }
   else
@@ -273,9 +271,7 @@ void setup() {
   //Update everything
   last_weather_refresh = weather_refresh_interval;
   last_lcd_refresh = lcd_refresh_interval;
-  last_time_refresh = time_refresh_interval;
   last_order_refresh = order_refresh_interval;
-  
 }
 
 
@@ -1040,7 +1036,7 @@ void loop()
       min_temp_air = temperature_air;
     }
     
-    last_temperature_water = temperature_water;
+    top_temperature_water = temperature_water;
     float t_wat_f = getTemp(water_temp_adress);
     temperature_water = round_macro(t_wat_f);
     Serial.print("tc|");
@@ -1063,7 +1059,7 @@ void loop()
     breakTime(now(), tm_now);
     
     int relay_status = LOW;
-    int rec_act = 0;
+    int order_on = false;
     
     //It's time to check orders!
     for(int i = 0; i < NUM_ORDERS; ++i)
@@ -1095,41 +1091,48 @@ void loop()
       {
         week_day_check = bitRead(order[i].active_days, tm_now.Wday - 2);
       }
-      // If we are in time span
-      if(week_day_check)
+      
+      // If we between in time span and we havent activated any order yet
+      if(week_day_check && order_on == false)
       {
         if(time_check) 
         {
           if(temperature_air < order[i].air_temperature)
           {
-            if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval) // Boiler temperature check have less frequency because it's heating gradient is small
+            relay_status = HIGH;
+            
+            // top_temperature_water stores the max temeprature registered at water pipes.
+            // This is supossed to be the steady state temperature.
+            // If water temp descends, we have to start again the system until it reachs 
+            // the max temperature.
+            // checking cadence is lower because tube heating is slower
+            if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval)
             {
-              if(last_temperature_water == temperature_water)
+              if (temperature_water < top_temperature_water)
               {
-                Serial.print("water temp ");
-                Serial.println(last_temperature_water);
-                relay_status == LOW;
-                rec_act = 1;
+                relay_status = LOW;
+              }else // temperature_water >= top_temperature_water
+              {
+                relay_status = HIGH;
+                top_temperature_water = temperature_water;
               }
               last_boiler_refresh = millis();
             }
-            
-            if(rec_act == 0)
-            {
-              relay_status = HIGH;
-              rec_act = 1;
-              Serial.print("or|");
-              Serial.println(i);
-            }
+            order_on = true;
           }
-        }
-      }
+          else // When we don't want to heat, because we hit the target,
+               // reset water temperature controller
+          {
+            top_temperature_water = 0;
+          }
+        }else{top_temperature_water = 0;}
+      }else{top_temperature_water = 0;}
     }
     
-    //Serial.print("ti|");
-    //Serial.println(now());
-    //Serial.print("ca|");
-    //Serial.println(relay_status);
+    Serial.print("ti|");
+    Serial.println(now());
+    Serial.print("ca|");
+    Serial.println(relay_status);
     
     digitalWrite(RELAY_PIN, relay_status);
     last_order_refresh = millis();
