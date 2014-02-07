@@ -32,6 +32,7 @@ lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
+lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
 
 /* Menu postion data */
 int first_active_menu = 0;
@@ -41,23 +42,23 @@ button button_pressed = BUTTON_NONE;
 
 /* Update timings */
 unsigned long last_lcd_refresh = 0;
-unsigned long lcd_refresh_interval = 250;
+const unsigned long lcd_refresh_interval = 250;
 unsigned long last_time_refresh = 0;
-unsigned long time_refresh_interval = 300000; // 5  minutes
+const unsigned long time_refresh_interval = 300000; // 5  minutes
 unsigned long last_weather_refresh = 0;
-unsigned long weather_refresh_interval = 60000; // Each minute
+const unsigned long weather_refresh_interval = 60000; // Each minute
 unsigned long last_boiler_refresh = 0;
-unsigned long boiler_refresh_interval = 6000; // 10 minutes //FIXME
+const unsigned long boiler_refresh_interval = 6000; // 10 minutes //FIXME
 unsigned long last_order_refresh = 0;
-unsigned long order_refresh_interval = 60000; // Each minute
+const unsigned long order_refresh_interval = 60000; // Each minute
 
 /* Weather */
 int temperature_air = 22;
 int temperature_water = 35;
 int last_temperature_water = 35;
-int humidity = 52;
-int max_temp_air = 0;
-int min_temp_air = 0;
+int humidity = 99;
+int max_temp_air = 10;
+int min_temp_air = 10;
 
 /* Orders */
 order_t order[NUM_ORDERS];
@@ -130,7 +131,7 @@ void setup() {
   //Magic code is used to detect if stored values can be trusted
   if(magic_code_ok == true)
   {
-    Serial.println("mc|OK");
+    //Serial.println("mc|OK");
     for(int j = 0; j < NUM_ORDERS; ++j)
     {
       order_t *ptr = &order[j];
@@ -139,7 +140,7 @@ void setup() {
   }
   else
   {
-    Serial.println("mc|NO");
+    //Serial.println("mc|NO");
     for(int k = 0; k < NUM_ORDERS; ++k)
     {
       order_t *ptr = &order[k];
@@ -154,8 +155,8 @@ void setup() {
   // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
   // sensor subpages
-  strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
-  strcpy(sensor_pages[0].content_row,"     13:37      ");
+  strcpy(sensor_pages[0].title_row , "Fecha:00/00/0000");
+  strcpy(sensor_pages[0].content_row,"Hora: 00:00    ~");
   sensor_pages[0].on_click = &on_sensor_submenu_click;
   sensor_pages[0].draw = &draw_datetime;
   
@@ -241,10 +242,18 @@ void setup() {
   main_pages[5].children_pages = &setdatetime_pages[0];
   main_pages[5].children_length = SETDATETIME_PAGES_COUNT;
   
+  // statistics subpages
+  strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
+  strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
+  statistics_pages[0].on_click = &on_about_submenu_click; //Return only
+  statistics_pages[0].draw = &draw_statistics;
+  
   strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
   strcpy(main_pages[6].content_row, "  Estadisticas  ");
   main_pages[6].on_click = &on_menu_click;
   main_pages[6].draw = NULL;
+  main_pages[6].children_pages = &statistics_pages[0];
+  main_pages[6].children_length = STATISTICS_PAGES_COUNT;
   
   // about subpage
   strcpy(about_pages[0].title_row , " (C) rafael1193 ");
@@ -302,8 +311,8 @@ void on_menu_click(button but)
         case 3:
         case 4:
           second_active_menu = first_active_menu - 1;
-          Serial.print("dg|second ");
-          Serial.println(second_active_menu);
+          //Serial.print("dg|second ");
+          //Serial.println(second_active_menu);
           break;
         default:
           second_active_menu = 0;
@@ -416,8 +425,8 @@ void on_order_submenu_click(button but)
       }
       break;
     case BUTTON_RETURN:
-      Serial.print("dg|return menu ");
-      Serial.println(second_active_menu);
+      //Serial.print("dg|return menu ");
+      //Serial.println(second_active_menu);
       write_order(second_active_menu); //Update order data on eeprom
       tag = 0;
       second_active_menu = -1;
@@ -599,7 +608,7 @@ int days_in_month(int mon, int ye)
     case 2: 
       if(islapyear(ye) == true) //February
       {
-        Serial.write("bisiesto!");
+        //Serial.write("bisiesto!");
         return 29;
       } else 
       {
@@ -627,10 +636,10 @@ void write_order(int n)
 {
   if(0 <= n && n <= NUM_ORDERS - 1)
   {
-    Serial.print("dg|");
-    Serial.print("page ");
-    Serial.print(n);
-    Serial.println(" written");
+    //Serial.print("dg|");
+    //Serial.print("page ");
+    //Serial.print(n);
+    //Serial.println(" written");
     order_t *ptr = &order[n];
     i2c_eeprom_write_page(ORDER_ADDR + n * sizeof(order_t), (byte*)ptr, sizeof(order_t));
   }
@@ -646,50 +655,64 @@ void write_order(int n)
 ***/
 void draw_datetime()
 {
-    String str_arriba = "";
-    String str_abajo = "";
-    String str_day = String(day(), 10);
-    String str_month = String(month(), 10);
-    String str_year = String(year(), 10);
-    String str_hour = String(hour(), 10);
-    String str_minute = String(minute(), 10);
-    
-    if(str_day.length() <= 1) // Padding
-    {
-      str_arriba += "0";
-    }
-    str_arriba += str_day;
-    str_arriba += "/";
-    if(str_month.length() <= 1) // Padding
-    {
-      str_arriba += "0";
-    }
-    str_arriba += str_month;
-    str_arriba += "/";
-    str_arriba += str_year;
-    
-    if(str_hour.length() <= 1) // Padding
-    {
-      str_abajo += "0";
-    }
-    str_abajo += str_hour;
-    str_abajo += ":";
-    if(str_minute.length() <= 1) // Padding
-    {
-      str_abajo += "0";
-    }
-    str_abajo += str_minute;
+  String str_day = String(day(), 10);
+  String str_month = String(month(), 10);
+  String str_year = String(year(), 10);
+  String str_hour = String(hour(), 10);
+  String str_minute = String(minute(), 10);
 
-    str_arriba.toCharArray(sensor_pages[0].title_row, 15);
-    str_abajo.toCharArray(sensor_pages[0].content_row, 15);
-    
-    lcd.print("Fecha:"+ str_arriba);
-    lcd.setCursor(0, 1);
-    lcd.print("Hora:  "+ str_abajo);
-
-    lcd.print("   ");
-    lcd.print("~");
+  //lcd.setCursor(0, 0);
+  //lcd.print(sensor_pages[0].title_row);
+  //lcd.setCursor(0, 1);
+  //lcd.print(sensor_pages[0].content_row);
   
+  if(str_day.length() <= 1) // Padding
+  {
+    lcd.setCursor(7, 0);
+    lcd.print(str_day);
+  }
+  else
+  {
+    lcd.setCursor(6, 0);
+    lcd.print(str_day);
+  }
+  
+  if(str_month.length() <= 1) // Padding
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_month);
+  }
+  else
+  {
+    lcd.setCursor(9, 0);
+    lcd.print(str_month);
+  }
+  
+  lcd.setCursor(12, 0);
+  lcd.print(str_year);
+  
+  if(str_hour.length() <= 1) // Padding
+  {
+    lcd.setCursor(7, 1);
+    lcd.print(str_hour);
+  }
+  else
+  {
+    lcd.setCursor(6, 1);
+    lcd.print(str_hour);
+  }
+  
+  if(str_minute.length() <= 1) // Padding
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_minute);
+  }
+  else
+  {
+    lcd.setCursor(9, 0);
+    lcd.print(str_minute);
+  }
+
   return;
 }
 
@@ -942,6 +965,37 @@ void draw_order()
   return; 
 }
 
+void draw_statistics ()
+{
+  String str_max = String(max_temp_air, 10);
+  String str_min = String(min_temp_air, 10);
+  lcd.setCursor(0, 0);
+  lcd.print(statistics_pages[0].title_row);
+  lcd.setCursor(0, 1);
+  lcd.print(statistics_pages[0].content_row);
+  if(str_max.length() <= 1) // Padding
+  {
+    lcd.setCursor(11, 0);
+    lcd.print(str_max);
+  }
+  else
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_max);
+  }
+  
+  if(str_min.length() <= 1) // Padding
+  {
+    lcd.setCursor(11, 0);
+    lcd.print(str_min);
+  }
+  else
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_min);
+  }
+}
+
 /*******************/
 /* looping methods */
 /*******************/
@@ -981,14 +1035,23 @@ void loop()
     
     float t_air_f = getTemp(air_temp_adress);
     temperature_air = round_macro(t_air_f);
-    Serial.print("ta|");
-    Serial.println(t_air_f);
+    //Serial.print("ta|");
+    //Serial.println(t_air_f);
+    
+    if(temperature_air > max_temp_air)
+    {
+      max_temp_air = temperature_air;
+    }
+    else if (temperature_air < min_temp_air)
+    {
+      min_temp_air = temperature_air;
+    }
     
     last_temperature_water = temperature_water;
     float t_wat_f = getTemp(water_temp_adress);
     temperature_water = round_macro(t_wat_f);
-    Serial.print("tc|");
-    Serial.println(t_wat_f);
+    //Serial.print("tc|");
+    //Serial.println(t_wat_f);
     
     //TODO: Humidity information
     //TODO: Error handling
@@ -1017,18 +1080,18 @@ void loop()
       
       ///////////////////DEBUG///////////////////
       
-      Serial.print("s_h");
-      Serial.println(order[i].start_hour);
-      Serial.print("s_m");
-      Serial.println(order[i].start_minute);
-      Serial.print("e_h");
-      Serial.println(order[i].end_hour);
-      Serial.print("e_m");
-      Serial.println(order[i].end_minute);
-      Serial.print("week day ");
-      Serial.println(tm_now.Wday);
-      Serial.print("time check: ");
-      Serial.println(time_check);
+      //Serial.print("s_h");
+      //Serial.println(order[i].start_hour);
+      //Serial.print("s_m");
+      //Serial.println(order[i].start_minute);
+      //Serial.print("e_h");
+      //Serial.println(order[i].end_hour);
+      //Serial.print("e_m");
+      //Serial.println(order[i].end_minute);
+      //Serial.print("week day ");
+      //Serial.println(tm_now.Wday);
+      //Serial.print("time check: ");
+      //Serial.println(time_check);
         
       ///////////////////////////////////////////
       
@@ -1050,8 +1113,8 @@ void loop()
             {
               if(last_temperature_water == temperature_water)
               {
-                Serial.print("water temp ");
-                Serial.println(last_temperature_water);
+                //Serial.print("water temp ");
+                //Serial.println(last_temperature_water);
                 relay_status == LOW;
                 rec_act = 1;
               }
@@ -1062,18 +1125,18 @@ void loop()
             {
               relay_status = HIGH;
               rec_act = 1;
-              Serial.print("or|");
-              Serial.println(i);
+              //Serial.print("or|");
+              //Serial.println(i);
             }
           }
         }
       }
     }
     
-    Serial.print("ti|");
-    Serial.println(now());
-    Serial.print("ca|");
-    Serial.println(relay_status);
+    //Serial.print("ti|");
+    //Serial.println(now());
+    //Serial.print("ca|");
+    //Serial.println(relay_status);
     
     digitalWrite(RELAY_PIN, relay_status);
     last_order_refresh = millis();
