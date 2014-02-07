@@ -174,8 +174,8 @@ void setup() {
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
   // Order 0 submenu
-  strcpy(order_pages[0].title_row , " 00: 00  00: 00 ");
-  strcpy(order_pages[0].content_row," _______   00oC ");
+  //strcpy(order_pages[0].title_row , " 00: 00  00: 00 ");
+  //strcpy(order_pages[0].content_row," _______   00oC ");
   order_pages[0].on_click = &on_order_submenu_click;
   order_pages[0].draw = draw_order;
   
@@ -188,8 +188,8 @@ void setup() {
   main_pages[1].children_length =  1;
   
   // Order 1 submenu
-  strcpy(order_pages[1].title_row , " 00: 00  00: 00 ");
-  strcpy(order_pages[1].content_row," _______   00oC ");
+  //strcpy(order_pages[1].title_row , " 00: 00  00: 00 ");
+  //strcpy(order_pages[1].content_row," _______   00oC ");
   order_pages[1].on_click = &on_order_submenu_click;
   order_pages[1].draw = draw_order;
   
@@ -202,8 +202,8 @@ void setup() {
   main_pages[2].children_length =  1;
   
   // Order 2 submenu
-  strcpy(order_pages[2].title_row , " 00: 00  00: 00 ");
-  strcpy(order_pages[2].content_row," _______   00oC ");
+  //strcpy(order_pages[2].title_row , " 00: 00  00: 00 ");
+  //strcpy(order_pages[2].content_row," _______   00oC ");
   order_pages[2].on_click = &on_order_submenu_click;
   order_pages[2].draw = draw_order;
   
@@ -216,8 +216,8 @@ void setup() {
   main_pages[3].children_length =  1;
   
   // Order 3 submenu
-  strcpy(order_pages[3].title_row , " 00: 00  00: 00 ");
-  strcpy(order_pages[3].content_row," _______   00oC ");
+  //strcpy(order_pages[3].title_row , " 00: 00  00: 00 ");
+  //strcpy(order_pages[3].content_row," _______   00oC ");
   order_pages[3].on_click = &on_order_submenu_click;
   order_pages[3].draw = draw_order;
   
@@ -230,8 +230,8 @@ void setup() {
   main_pages[4].children_length =  1;
   
   // set date and time subpages
-  strcpy(setdatetime_pages[0].title_row , "  00/ 00/ 0000  ");
-  strcpy(setdatetime_pages[0].content_row,"     00: 00     ");
+  //strcpy(setdatetime_pages[0].title_row , "  00/ 00/ 0000  ");
+  //strcpy(setdatetime_pages[0].content_row,"     00: 00     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
   setdatetime_pages[0].draw = &draw_setdatetime;
   
@@ -784,10 +784,10 @@ void draw_setdatetime()
   String str_hour = String(hour(), 10);
   String str_minute = String(minute(), 10);
 
-//  lcd.setCursor(0,0);
-//  lcd.print("  00/ 00/ 0000  ");
-//  lcd.setCursor(0,1);
-//  lcd.print("     00: 00     ");
+  lcd.setCursor(0,0);
+  lcd.print(setdatetime_pages[0].title_row);
+  lcd.setCursor(0,1);
+  lcd.print(setdatetime_pages[0].content_row);
   if(str_day.length() <= 1) // Padding
   {
     lcd.setCursor(3, 0);
@@ -868,10 +868,9 @@ void draw_order()
   String str_end_minute = String(order[second_active_menu].end_minute, 10);
   String str_air_temperature = String(order[second_active_menu].air_temperature, 10);
   
-  //        "0123456789012345"
-//  lcd.print(" 00: 00  00: 00 ");
-//  lcd.setCursor(0, 1);
-//  lcd.print(" _______   00oC ");
+  lcd.print(" 00: 00  00: 00 ");
+  lcd.setCursor(0, 1);
+  lcd.print(" _______   00oC ");
 
   if(str_start_hour.length() <= 1) // Padding
   {
