@@ -142,7 +142,7 @@ void setup() {
     for(int k = 0; k < NUM_ORDERS; ++k)
     {
       order_t *ptr = &order[k];
-      i2c_eeprom_write_page(ORDER_ADDR + k * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+      i2c_eeprom_write_page(ORDER_ADDR + k * 12, (byte*)ptr, 12);
     }
     
     //If magic code is not present, write it.
@@ -632,7 +632,7 @@ void write_order(int n)
     Serial.print(n);
     Serial.println(" written");
     order_t *ptr = &order[n];
-    i2c_eeprom_write_page(ORDER_ADDR + n * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+    i2c_eeprom_write_page(ORDER_ADDR + n * 12, (byte*)ptr, 12);
   }
 }
 

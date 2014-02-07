@@ -25,6 +25,6 @@
 const byte MAGIC_CODE[] = {0x60, 0x0D, 0xF0, 0x0D};
 #define MAGIC_CODE_ADDR 0x00
 
-#define ORDER_ADDR 0x03
+#define ORDER_ADDR 0x04
 
 #endif
