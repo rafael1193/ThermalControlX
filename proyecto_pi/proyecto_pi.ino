@@ -57,8 +57,8 @@ int temperature_air = 22;
 int temperature_water = 35;
 int top_temperature_water = 35;
 int humidity = 99;
-int max_temp_air = 10;
-int min_temp_air = 10;
+int max_temp_air = -100;
+int min_temp_air = -100;
 
 /* Orders */
 order_t order[NUM_ORDERS];
@@ -996,12 +996,12 @@ void draw_statistics ()
   
   if(str_min.length() <= 1) // Padding
   {
-    lcd.setCursor(11, 0);
+    lcd.setCursor(11, 1);
     lcd.print(str_min);
   }
   else
   {
-    lcd.setCursor(10, 0);
+    lcd.setCursor(10, 1);
     lcd.print(str_min);
   }
 }
@@ -1048,6 +1048,12 @@ void loop()
     temperature_air = round_macro(t_air_f);
     Serial.print("ta|");
     Serial.println(t_air_f);
+    
+    if(max_temp_air == -100 && min_temp_air == -100) // this means "there is no max or min temperature"
+    {
+      max_temp_air = temperature_air;
+      min_temp_air = temperature_air;
+    }
     
     if(temperature_air > max_temp_air)
     {
