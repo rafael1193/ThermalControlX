@@ -24,8 +24,9 @@
 #include <OneWire.h>
 #include <Wire.h>
 #include <DS1307RTC.h>
+#include "external_eeprom.h"
 
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 7, 6, 5, 4);
 lcdmenu_page main_pages[MAIN_PAGES_COUNT];
 lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
@@ -45,13 +46,18 @@ unsigned long last_time_refresh = 0;
 unsigned long time_refresh_interval = 300000; // 5  minutes
 unsigned long last_weather_refresh = 0;
 unsigned long weather_refresh_interval = 60000; // Each minute
+unsigned long last_boiler_refresh = 0;
+unsigned long boiler_refresh_interval = 6000; // 10 minutes //FIXME
 unsigned long last_order_refresh = 0;
 unsigned long order_refresh_interval = 60000; // Each minute
 
 /* Weather */
 int temperature_air = 22;
 int temperature_water = 35;
+int last_temperature_water = 35;
 int humidity = 52;
+int max_temp_air = 0;
+int min_temp_air = 0;
 
 /* Orders */
 order_t order[NUM_ORDERS];
@@ -76,44 +82,85 @@ int relay_status = LOW;
 void setup() {
   lcd.begin(16,2);
   lcd.setCursor(0, 0);
-  lcd.write("  Bienvenido!  ");
+  lcd.write("ThermalControl X");
   lcd.setCursor(0, 1);
   lcd.write("Inicializando...");
   
   Serial.begin(9600);
+  
+  Wire.begin();
   
   buttons_init();
   
   //Relay setup
   pinMode(RELAY_PIN, OUTPUT);
   
-  //Time setup
+  // Time setup
   setTime(1,10,0,16,12,2014);
   setSyncProvider(RTC.get);
   setSyncInterval(300); //5 minutes
   
+  // Load from eeprom
+  byte magic_code_buffer[sizeof(MAGIC_CODE)];
+  boolean magic_code_ok = true;
   
-  //////////////// DEBUG ///////////////
+  // orders initialization
+  // when EEPROM is not present, these are the default values
+  for(int i = 0; i < NUM_ORDERS; ++i)
+  {
+    order[0].start_hour = 0;
+    order[0].start_minute = 0;
+    order[0].end_hour = 0;
+    order[0].end_minute = 0;
+    order[0].air_temperature = 0;
+    order[0].active_days = 0;
+  }
+   
+  i2c_eeprom_read_buffer(MAGIC_CODE_ADDR, magic_code_buffer, sizeof(magic_code_buffer));
   
-//  order[0].start_hour = 0;
-//  order[0].start_minute = 0;
-//  order[0].end_hour = 23;
-//  order[0].end_minute = 59;
-//  order[0].air_temperature = 28;
-//  order[0].active_days = -1; //All
+  for(int i  = 0; i < sizeof(MAGIC_CODE); ++i)
+  {
+    if(magic_code_buffer[i] != MAGIC_CODE[i])
+    {
+      magic_code_ok = false;
+      break;
+    }
+  }
   
-  //////////////////////////////////////
+  //Magic code is used to detect if stored values can be trusted
+  if(magic_code_ok == true)
+  {
+    Serial.println("mc|OK");
+    for(int j = 0; j < NUM_ORDERS; ++j)
+    {
+      order_t *ptr = &order[j];
+      i2c_eeprom_read_buffer(ORDER_ADDR + j * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+    }
+  }
+  else
+  {
+    Serial.println("mc|NO");
+    for(int k = 0; k < NUM_ORDERS; ++k)
+    {
+      order_t *ptr = &order[k];
+      i2c_eeprom_write_page(ORDER_ADDR + k * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+    }
+    
+    //If magic code is not present, write it.
+    i2c_eeprom_write_page(MAGIC_CODE_ADDR, (byte*)MAGIC_CODE, sizeof(MAGIC_CODE));
+    //EEPROM is now trustful
+  }
   
   // Setup main pages content        "_-_-_-_-_-_-_-_-"
   
   // sensor subpages
-  //strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
-  //strcpy(sensor_pages[0].content_row,"     13:37      ");
+  strcpy(sensor_pages[0].title_row , "   01/01/1970  ~");
+  strcpy(sensor_pages[0].content_row,"     13:37      ");
   sensor_pages[0].on_click = &on_sensor_submenu_click;
   sensor_pages[0].draw = &draw_datetime;
   
-  //strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
-  //strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
+  strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
+  strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
   sensor_pages[1].on_click = &on_sensor_submenu_click;
   sensor_pages[1].draw = &draw_temperature_humidity;
 
@@ -150,7 +197,7 @@ void setup() {
   strcpy(main_pages[2].content_row, "   Consigna 1   ");
   main_pages[2].on_click = &on_menu_click;
   main_pages[2].draw = NULL;
-  main_pages[2].children_pages = &order_pages[1];
+  main_pages[2].children_pages = &order_pages[0];
   main_pages[2].children_length =  1;
   
   // Order 2 submenu
@@ -164,7 +211,7 @@ void setup() {
   strcpy(main_pages[3].content_row, "   Consigna 2   ");
   main_pages[3].on_click = &on_menu_click;
   main_pages[3].draw = NULL;
-  main_pages[3].children_pages = &order_pages[2];
+  main_pages[3].children_pages = &order_pages[0];
   main_pages[3].children_length =  1;
   
   // Order 3 submenu
@@ -178,7 +225,7 @@ void setup() {
   strcpy(main_pages[4].content_row, "   Consigna 3   ");
   main_pages[4].on_click = &on_menu_click;
   main_pages[4].draw = NULL;
-  main_pages[4].children_pages = &order_pages[3];
+  main_pages[4].children_pages = &order_pages[0];
   main_pages[4].children_length =  1;
   
   // set date and time subpages
@@ -246,8 +293,22 @@ void on_menu_click(button but)
         first_active_menu++;
       }
       break;
-    case BUTTON_RETURN:
-      second_active_menu = 0;
+    case BUTTON_RETURN:  
+      switch(first_active_menu)
+      {
+        // in case of order_pages, second_active_menu works different
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+          second_active_menu = first_active_menu - 1;
+          Serial.print("dg|second ");
+          Serial.println(second_active_menu);
+          break;
+        default:
+          second_active_menu = 0;
+          break;
+      }
     default:
       break;
   }
@@ -355,6 +416,9 @@ void on_order_submenu_click(button but)
       }
       break;
     case BUTTON_RETURN:
+      Serial.print("dg|return menu ");
+      Serial.println(second_active_menu);
+      write_order(second_active_menu); //Update order data on eeprom
       tag = 0;
       second_active_menu = -1;
     default:
@@ -559,6 +623,19 @@ boolean islapyear(int ye)
   }
 }
 
+void write_order(int n)
+{
+  if(0 <= n && n <= NUM_ORDERS - 1)
+  {
+    Serial.print("dg|");
+    Serial.print("page ");
+    Serial.print(n);
+    Serial.println(" written");
+    order_t *ptr = &order[n];
+    i2c_eeprom_write_page(ORDER_ADDR + n * sizeof(order_t), (byte*)ptr, sizeof(order_t));
+  }
+}
+
 
 /****************************/
 /* draw handling methods */
@@ -657,7 +734,7 @@ void draw_temperature_humidity()
   str_abajo.toCharArray(sensor_pages[1].content_row, 15);
 //  Serial.println(sensor_pages[1].title_row);
 //  Serial.println(sensor_pages[1].content_row);
-  
+  lcd.setCursor(0,0);
   lcd.print(str_arriba);
   lcd.setCursor(0, 1);
   lcd.print(str_abajo);
@@ -676,7 +753,9 @@ void draw_setdatetime()
   String str_hour = String(hour(), 10);
   String str_minute = String(minute(), 10);
   //        "01234567890123456"
+  lcd.setCursor(0,0);
   lcd.print("  00/ 00/ 0000  ");
+  lcd.setCursor(0,1);
   lcd.print("     00: 00     ");
   if(str_day.length() <= 1) // Padding
   {
@@ -898,12 +977,14 @@ void loop()
   //Serial.println(last_weather_refresh);
   if(abs(millis() - last_weather_refresh) > weather_refresh_interval) 
   {
-    //It's time to update weather info! 
+    //It's time to update weather info!
+    
     float t_air_f = getTemp(air_temp_adress);
     temperature_air = round_macro(t_air_f);
     Serial.print("ta|");
     Serial.println(t_air_f);
-
+    
+    last_temperature_water = temperature_water;
     float t_wat_f = getTemp(water_temp_adress);
     temperature_water = round_macro(t_wat_f);
     Serial.print("tc|");
@@ -936,16 +1017,18 @@ void loop()
       
       ///////////////////DEBUG///////////////////
       
-//      Serial.println("s_h");
-//      Serial.println(order[i].start_hour);
-//      Serial.println("s_m");
-//      Serial.println(order[i].start_minute);
-//      Serial.println("e_h");
-//      Serial.println(order[i].end_hour);
-//      Serial.println("e_m");
-//      Serial.println(order[i].end_minute);
-//      Serial.println(tm_now.Wday);
-//      Serial.println(time_check);
+      Serial.print("s_h");
+      Serial.println(order[i].start_hour);
+      Serial.print("s_m");
+      Serial.println(order[i].start_minute);
+      Serial.print("e_h");
+      Serial.println(order[i].end_hour);
+      Serial.print("e_m");
+      Serial.println(order[i].end_minute);
+      Serial.print("week day ");
+      Serial.println(tm_now.Wday);
+      Serial.print("time check: ");
+      Serial.println(time_check);
         
       ///////////////////////////////////////////
       
@@ -963,10 +1046,24 @@ void loop()
         {
           if(temperature_air < order[i].air_temperature)
           {
+            if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval) // Boiler temperature check have less frequency because it's heating gradient is small
+            {
+              if(last_temperature_water == temperature_water)
+              {
+                Serial.print("water temp ");
+                Serial.println(last_temperature_water);
+                relay_status == LOW;
+                rec_act = 1;
+              }
+              last_boiler_refresh = millis();
+            }
+            
             if(rec_act == 0)
             {
               relay_status = HIGH;
               rec_act = 1;
+              Serial.print("or|");
+              Serial.println(i);
             }
           }
         }
