@@ -28,7 +28,4 @@ typedef enum button {
   BUTTON_MINUS
 };
 
-void button_init();
-button button_read_non_blocking();
-
 #endif /* BUTTONS_H */

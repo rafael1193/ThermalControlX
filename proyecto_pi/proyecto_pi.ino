@@ -32,7 +32,9 @@ lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
-//lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
+#ifdef ENABLE_STATISTICS
+lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
+#endif /* ENABLE_STATISTICS */
 
 /* Menu postion data */
 int first_active_menu = 0;
@@ -158,8 +160,8 @@ void setup() {
   sensor_pages[0].on_click = &on_sensor_submenu_click;
   sensor_pages[0].draw = &draw_datetime;
   
-  strcpy(sensor_pages[1].title_row , "    Ta=12oC    ");
-  strcpy(sensor_pages[1].content_row,"Tc=12oC   HU=34%");
+  //strcpy(sensor_pages[1].title_row , "    Ta=00oC    ");
+  //strcpy(sensor_pages[1].content_row,"Tc=00oC   HU=00%");
   sensor_pages[1].on_click = &on_sensor_submenu_click;
   sensor_pages[1].draw = &draw_temperature_humidity;
 
@@ -172,8 +174,8 @@ void setup() {
   main_pages[0].children_length = SENSOR_PAGES_COUNT;
   
   // Order 0 submenu
-  //strcpy(order_pages[0].title_row , " ?00:?00?00:?00 ");
-  //strcpy(order_pages[0].content_row,"LMXJVSD   ?20oC ");
+  strcpy(order_pages[0].title_row , " 00: 00  00: 00 ");
+  strcpy(order_pages[0].content_row," _______   00oC ");
   order_pages[0].on_click = &on_order_submenu_click;
   order_pages[0].draw = draw_order;
   
@@ -186,8 +188,8 @@ void setup() {
   main_pages[1].children_length =  1;
   
   // Order 1 submenu
-  //strcpy(order_pages[1].title_row , "?00:?00 ?00:?00 ");
-  //strcpy(order_pages[1].content_row," ?L?M?X?J?V?S?D ");
+  strcpy(order_pages[1].title_row , " 00: 00  00: 00 ");
+  strcpy(order_pages[1].content_row," _______   00oC ");
   order_pages[1].on_click = &on_order_submenu_click;
   order_pages[1].draw = draw_order;
   
@@ -200,8 +202,8 @@ void setup() {
   main_pages[2].children_length =  1;
   
   // Order 2 submenu
-  //strcpy(order_pages[2].title_row , "?00:?00 ?00:?00 ");
-  //strcpy(order_pages[2].content_row," ?L?M?X?J?V?S?D ");
+  strcpy(order_pages[2].title_row , " 00: 00  00: 00 ");
+  strcpy(order_pages[2].content_row," _______   00oC ");
   order_pages[2].on_click = &on_order_submenu_click;
   order_pages[2].draw = draw_order;
   
@@ -214,8 +216,8 @@ void setup() {
   main_pages[3].children_length =  1;
   
   // Order 3 submenu
-  //strcpy(order_pages[3].title_row , "?00:?00 ?00:?00 ");
-  //strcpy(order_pages[3].content_row," ?L?M?X?J?V?S?D ");
+  strcpy(order_pages[3].title_row , " 00: 00  00: 00 ");
+  strcpy(order_pages[3].content_row," _______   00oC ");
   order_pages[3].on_click = &on_order_submenu_click;
   order_pages[3].draw = draw_order;
   
@@ -228,8 +230,8 @@ void setup() {
   main_pages[4].children_length =  1;
   
   // set date and time subpages
-  //strcpy(setdatetime_pages[0].title_row , " ?01/?01/?1970  ");
-  //strcpy(setdatetime_pages[0].content_row,"    ?13:?37     ");
+  strcpy(setdatetime_pages[0].title_row , "  00/ 00/ 0000  ");
+  strcpy(setdatetime_pages[0].content_row,"     00: 00     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
   setdatetime_pages[0].draw = &draw_setdatetime;
   
@@ -240,19 +242,35 @@ void setup() {
   main_pages[5].children_pages = &setdatetime_pages[0];
   main_pages[5].children_length = SETDATETIME_PAGES_COUNT;
   
-//  // statistics subpages
-//  strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
-//  strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
-//  statistics_pages[0].on_click = &on_about_submenu_click; //Return only
-//  statistics_pages[0].draw = &draw_statistics;
+#ifdef ENABLE_STATISTICS
+  // statistics subpages
+  strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
+  strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
+  statistics_pages[0].on_click = &on_about_submenu_click; //Return only
+  statistics_pages[0].draw = &draw_statistics;
   
-//  strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
-//  strcpy(main_pages[6].content_row, "  Estadisticas  ");
-//  main_pages[6].on_click = &on_menu_click;
-//  main_pages[6].draw = NULL;
-//  main_pages[6].children_pages = &statistics_pages[0];
-//  main_pages[6].children_length = STATISTICS_PAGES_COUNT;
+  strcpy(main_pages[6].title_row ,  "     Menu    ~ ");
+  strcpy(main_pages[6].content_row, "  Estadisticas  ");
+  main_pages[6].on_click = &on_menu_click;
+  main_pages[6].draw = NULL;
+  main_pages[6].children_pages = &statistics_pages[0];
+  main_pages[6].children_length = STATISTICS_PAGES_COUNT;
   
+  // about subpage
+  strcpy(about_pages[0].title_row , " (C) rafael1193 ");
+  strcpy(about_pages[0].content_row," GPLv3+ ");
+  strcat(about_pages[0].content_row, PROGRAM_VERSION);
+  about_pages[0].on_click = &on_about_submenu_click;
+  about_pages[0].draw = NULL;
+  
+  // about page
+  strcpy(main_pages[7].title_row ,  "     Menu      ");
+  strcpy(main_pages[7].content_row, "   Acerca de... ");
+  main_pages[7].on_click = &on_menu_click;
+  main_pages[7].draw = NULL;
+  main_pages[7].children_pages = &about_pages[0];
+  main_pages[7].children_length = ABOUT_PAGES_COUNT;
+#else /* ENABLE_STATISTICS */
   // about subpage
   strcpy(about_pages[0].title_row , " (C) rafael1193 ");
   strcpy(about_pages[0].content_row," GPLv3+ ");
@@ -267,6 +285,7 @@ void setup() {
   main_pages[6].draw = NULL;
   main_pages[6].children_pages = &about_pages[0];
   main_pages[6].children_length = ABOUT_PAGES_COUNT;
+#endif /* ENABLE_STATISTICS */
   
   //Update everything
   last_weather_refresh = weather_refresh_interval;
@@ -765,10 +784,10 @@ void draw_setdatetime()
   String str_hour = String(hour(), 10);
   String str_minute = String(minute(), 10);
 
-  lcd.setCursor(0,0);
-  lcd.print("  00/ 00/ 0000  ");
-  lcd.setCursor(0,1);
-  lcd.print("     00: 00     ");
+//  lcd.setCursor(0,0);
+//  lcd.print("  00/ 00/ 0000  ");
+//  lcd.setCursor(0,1);
+//  lcd.print("     00: 00     ");
   if(str_day.length() <= 1) // Padding
   {
     lcd.setCursor(3, 0);
@@ -850,9 +869,9 @@ void draw_order()
   String str_air_temperature = String(order[second_active_menu].air_temperature, 10);
   
   //        "0123456789012345"
-  lcd.print(" 00: 00  00: 00 ");
-  lcd.setCursor(0, 1);
-  lcd.print(" _______   00oC ");
+//  lcd.print(" 00: 00  00: 00 ");
+//  lcd.setCursor(0, 1);
+//  lcd.print(" _______   00oC ");
 
   if(str_start_hour.length() <= 1) // Padding
   {
@@ -953,37 +972,38 @@ void draw_order()
   }
   return; 
 }
-
-//void draw_statistics ()
-//{
-//  String str_max = String(max_temp_air, 10);
-//  String str_min = String(min_temp_air, 10);
-//  lcd.setCursor(0, 0);
-//  lcd.print(statistics_pages[0].title_row);
-//  lcd.setCursor(0, 1);
-//  lcd.print(statistics_pages[0].content_row);
-//  if(str_max.length() <= 1) // Padding
-//  {
-//    lcd.setCursor(11, 0);
-//    lcd.print(str_max);
-//  }
-//  else
-//  {
-//    lcd.setCursor(10, 0);
-//    lcd.print(str_max);
-//  }
-//  
-//  if(str_min.length() <= 1) // Padding
-//  {
-//    lcd.setCursor(11, 0);
-//    lcd.print(str_min);
-//  }
-//  else
-//  {
-//    lcd.setCursor(10, 0);
-//    lcd.print(str_min);
-//  }
-//}
+#ifdef ENABLE_STATISTICS
+void draw_statistics ()
+{
+  String str_max = String(max_temp_air, 10);
+  String str_min = String(min_temp_air, 10);
+  lcd.setCursor(0, 0);
+  lcd.print(statistics_pages[0].title_row);
+  lcd.setCursor(0, 1);
+  lcd.print(statistics_pages[0].content_row);
+  if(str_max.length() <= 1) // Padding
+  {
+    lcd.setCursor(11, 0);
+    lcd.print(str_max);
+  }
+  else
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_max);
+  }
+  
+  if(str_min.length() <= 1) // Padding
+  {
+    lcd.setCursor(11, 0);
+    lcd.print(str_min);
+  }
+  else
+  {
+    lcd.setCursor(10, 0);
+    lcd.print(str_min);
+  }
+}
+#endif /* ENABLE_STATISTICS */
 
 /*******************/
 /* looping methods */
