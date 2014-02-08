@@ -48,7 +48,7 @@ const unsigned long lcd_refresh_interval = 250;
 unsigned long last_weather_refresh = 0;
 const unsigned long weather_refresh_interval = 60000; // Each minute
 unsigned long last_boiler_refresh = 0;
-const unsigned long boiler_refresh_interval = 60000; // Each 10 minutes //FIXME for 10 minutes
+const unsigned long boiler_refresh_interval = 600000; // 10 minutes
 unsigned long last_order_refresh = 0;
 const unsigned long order_refresh_interval = 60000; // Each minute
 
