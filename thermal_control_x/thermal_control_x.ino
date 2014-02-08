@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "proyecto_pi.h"
+#include "thermal_control_x.h"
 #include <LiquidCrystal.h>
 #include <Time.h>
 #include "lcdmenu.h"
@@ -32,9 +32,9 @@ lcdmenu_page about_pages[ABOUT_PAGES_COUNT];
 lcdmenu_page sensor_pages[SENSOR_PAGES_COUNT];
 lcdmenu_page setdatetime_pages[SETDATETIME_PAGES_COUNT];
 lcdmenu_page order_pages[ORDER_PAGES_COUNT]; //Warning: order_pages array is common for all order pages. There is no isolation between diferent orders.
-#ifdef ENABLE_STATISTICS
+#ifdef ENABLE_PLUS
 lcdmenu_page statistics_pages[STATISTICS_PAGES_COUNT];
-#endif /* ENABLE_STATISTICS */
+#endif /* ENABLE_PLUS */
 
 /* Menu postion data */
 int first_active_menu = 0;
@@ -86,7 +86,11 @@ int relay_status = LOW;
 void setup() {
   lcd.begin(16,2);
   lcd.setCursor(0, 0);
-  lcd.write("ThermalControl X");
+  #ifdef ENABLE_PLUS
+    lcd.write("ThermalControlX+");
+  #else /* ENABLE_PLUS */
+    lcd.write("ThermalControlX");
+  #endif /* ENABLE_PLUS */
   lcd.setCursor(0, 1);
   lcd.write("Inicializando...");
   
@@ -245,7 +249,7 @@ void setup() {
   main_pages[5].children_pages = &setdatetime_pages[0];
   main_pages[5].children_length = SETDATETIME_PAGES_COUNT;
   
-#ifdef ENABLE_STATISTICS
+#ifdef ENABLE_PLUS
   // statistics subpages
   strcpy(statistics_pages[0].title_row , "Max temp: 00oC  ");
   strcpy(statistics_pages[0].content_row,"Min temp: 00oC  ");
@@ -273,7 +277,7 @@ void setup() {
   main_pages[7].draw = NULL;
   main_pages[7].children_pages = &about_pages[0];
   main_pages[7].children_length = ABOUT_PAGES_COUNT;
-#else /* ENABLE_STATISTICS */
+#else /* ENABLE_PLUS */
   // about subpage
   strcpy(about_pages[0].title_row , " (C) rafael1193 ");
   strcpy(about_pages[0].content_row," GPLv3+ ");
@@ -288,7 +292,7 @@ void setup() {
   main_pages[6].draw = NULL;
   main_pages[6].children_pages = &about_pages[0];
   main_pages[6].children_length = ABOUT_PAGES_COUNT;
-#endif /* ENABLE_STATISTICS */
+#endif /* ENABLE_PLUS */
   
   //Update everything
   last_weather_refresh = weather_refresh_interval;
@@ -973,7 +977,7 @@ void draw_order()
   }
   return; 
 }
-#ifdef ENABLE_STATISTICS
+#ifdef ENABLE_PLUS
 void draw_statistics ()
 {
   String str_max = String(max_temp_air, 10);
@@ -1004,7 +1008,7 @@ void draw_statistics ()
     lcd.print(str_min);
   }
 }
-#endif /* ENABLE_STATISTICS */
+#endif /* ENABLE_PLUS */
 
 /*******************/
 /* looping methods */
@@ -1147,27 +1151,27 @@ void loop()
               // (Checking cadence is lower because tube heating is slower)
               if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval)
               {
-                Serial.print("dg|wat ");
-                Serial.println(temperature_water);
-                Serial.print("dg|top_wat ");
-                Serial.println(top_temperature_water);
+                //ENABLE_PLUSSerial.print("dg|wat ");
+                //Serial.println(temperature_water);
+                //Serial.print("dg|top_wat ");
+                //Serial.println(top_temperature_water);
                 
                 if(temperature_water > top_temperature_water)
                 {
                   top_temperature_water = temperature_water;
-                  Serial.println("dg|bigger");
+                  //Serial.println("dg|bigger");
                   relay_status = HIGH;
                   top_temperature_water = temperature_water;
                 }
                 else if(top_temperature_water - temperature_water < TOP_WATER_TEMP_INTERVAL)
                 {
-                  Serial.println("dg|on interval");
+                  //Serial.println("dg|on interval");
                   relay_status = LOW;
                 }
                 //      below interval
                 else
                 {
-                  Serial.println("dg|below");
+                  //Serial.println("dg|below");
                   relay_status = HIGH;
                 }
                 last_boiler_refresh = millis();
