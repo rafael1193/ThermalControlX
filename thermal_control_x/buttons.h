@@ -1,5 +1,5 @@
-/* 
- * Proyecto PI. An inteligent boiler control system
+/*
+ * Thermal Control X. An inteligent boiler control system
  * Copyright (C) 2014  Rafael Bailón-Ruiz <rafaelbailon en ieee punto org> 
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,19 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
-#ifndef LCDMENU_H
-#define LCDMENU_H
-#include "buttons.h"
 
-typedef struct lcdmenu_page {
-  char title_row[17];
-  char content_row[17];
-  void (*on_click)(button);
-  void (*draw)();
-  lcdmenu_page* children_pages;
-  int children_length;
+#ifndef BUTTONS_H
+#define BUTTONS_H
+
+typedef enum button {
+  BUTTON_NONE = 0,
+  BUTTON_RETURN,
+  BUTTON_LEFT,
+  BUTTON_RIGHT,
+  BUTTON_PLUS,
+  BUTTON_MINUS
 };
-#define INDEX_MARK '?'
- 
-#endif /* LCDMENU_H */
+
+#endif /* BUTTONS_H */

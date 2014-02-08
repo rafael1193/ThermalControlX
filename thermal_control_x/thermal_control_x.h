@@ -1,5 +1,5 @@
 /* 
- * Proyecto PI. An inteligent boiler control system
+ * Thermal Control X. An inteligent boiler control system
  * Copyright (C) 2014  Rafael Bailón-Ruiz <rafaelbailon en ieee punto org> 
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PROYECTO_PI_H
-#define PROYECTO_PI_H
+#ifndef THERMAL_CONTROL_X_H
+#define THERMAL_CONTROL_X_H
 
 #define PROGRAM_VERSION "v0.9.90"
 
@@ -62,5 +62,5 @@ typedef struct order_t {
   int air_temperature;
 };
 
-#endif /* PROYECTO_PI_H */
+#endif /* THERMAL_CONTROL_X_H */
 
