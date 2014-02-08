@@ -49,6 +49,8 @@
 #define DAY_SATURDAY 5
 #define DAY_SUNDAY 6
 
+#define TOP_WATER_TEMP_INTERVAL 2
+
 const char char_day[] = {'L', 'M', 'X', 'J', 'V', 'S', 'D'};
 
 typedef struct order_t {

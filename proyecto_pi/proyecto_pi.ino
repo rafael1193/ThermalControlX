@@ -50,12 +50,12 @@ const unsigned long weather_refresh_interval = 60000; // Each minute
 unsigned long last_boiler_refresh = 0;
 const unsigned long boiler_refresh_interval = 600000; // 10 minutes
 unsigned long last_order_refresh = 0;
-const unsigned long order_refresh_interval = 60000; // Each minute
+const unsigned long order_refresh_interval = 30000; // 30 seconds
 
 /* Weather */
 int temperature_air = 22;
 int temperature_water = 35;
-int top_temperature_water = 35;
+int top_temperature_water = 0;
 int humidity = 99;
 int max_temp_air = -100;
 int min_temp_air = -100;
@@ -1063,7 +1063,6 @@ void loop()
       min_temp_air = temperature_air;
     }
     
-    top_temperature_water = temperature_water;
     float t_wat_f = getTemp(water_temp_adress);
     temperature_water = round_macro(t_wat_f);
     Serial.print("tc|");
@@ -1120,40 +1119,70 @@ void loop()
       }
       
       // If we between in time span and we havent activated any order yet
-      if(week_day_check && order_on == false)
+      if(order_on == false)
       {
-        if(time_check) 
+        if(week_day_check)
         {
-          if(temperature_air < order[i].air_temperature)
+          if(time_check) 
           {
-            relay_status = HIGH;
-            
-            // top_temperature_water stores the max temeprature registered at water pipes.
-            // This is supossed to be the steady state temperature.
-            // If water temp descends, we have to start again the system until it reachs 
-            // the max temperature.
-            // checking cadence is lower because tube heating is slower
-            if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval)
+            if(temperature_air < order[i].air_temperature)
             {
-              if (temperature_water < top_temperature_water)
+              relay_status = HIGH;
+              
+              // top_temperature_water stores the max temeprature registered at water pipes.
+              // This is supossed to be the steady state temperature.
+              // The following algorithm is in charge of maintaining water temperature on this
+              // steady state temperature.
+              // If water temp doesn't change from last check, we have arrived to saturation
+              // temperature and boiler is stopped. (it's assumible that temperature change 
+              // rate is faster than checking time rate)
+              // When water temperature changes, we cannot stop. If temperature is higher, we 
+              // are effectively heating; and when temperature is lower, we have to start again
+              // in order to heat again the system until it reachs the max temperature.
+              // In short words: 
+              //   *  If water temp is *inside* TOP_WATER_TEMP_INTERVAL, boiler is 
+              //      stopped.
+              //   *  If water temp is *out of* TOP_WATER_TEMP_INTERVAL, boiler is 
+              //      started.
+              // (Checking cadence is lower because tube heating is slower)
+              if(abs(millis() - last_boiler_refresh) > boiler_refresh_interval)
               {
-                relay_status = LOW;
-              }else // temperature_water >= top_temperature_water
-              {
-                relay_status = HIGH;
-                top_temperature_water = temperature_water;
+                Serial.print("dg|wat ");
+                Serial.println(temperature_water);
+                Serial.print("dg|top_wat ");
+                Serial.println(top_temperature_water);
+                
+                if(temperature_water > top_temperature_water)
+                {
+                  top_temperature_water = temperature_water;
+                  Serial.println("dg|bigger");
+                  relay_status = HIGH;
+                  top_temperature_water = temperature_water;
+                }
+                else if(top_temperature_water - temperature_water < TOP_WATER_TEMP_INTERVAL)
+                {
+                  Serial.println("dg|on interval");
+                  relay_status = LOW;
+                }
+                //      below interval
+                else
+                {
+                  Serial.println("dg|below");
+                  relay_status = HIGH;
+                }
+                last_boiler_refresh = millis();
               }
-              last_boiler_refresh = millis();
+              order_on = true;
             }
-            order_on = true;
-          }
-          else // When we don't want to heat, because we hit the target,
-               // reset water temperature controller
-          {
-            top_temperature_water = 0;
-          }
+            else // When we don't want to heat, because we hit the target,
+                 // reset water temperature controller
+            {
+              Serial.println("dg|reset");
+              top_temperature_water = 0;
+            }
+          }else{top_temperature_water = 0;}
         }else{top_temperature_water = 0;}
-      }else{top_temperature_water = 0;}
+      }
     }
     
     Serial.print("ti|");
