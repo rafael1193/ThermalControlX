@@ -474,7 +474,7 @@ void on_setdatetime_submenu_click(button but)
       switch (tag)
       {
         case 0: //day
-          switch (days_in_month(tm.Month, tm.Year))
+          switch (days_in_month(tm.Month, tm.Year + 1970))
           {
             case 31:
               if(tm.Day < 31) {++tm.Day;}
@@ -482,7 +482,6 @@ void on_setdatetime_submenu_click(button but)
             case 30: //30-days months
               if(tm.Day < 30) {++tm.Day;}
               break;
-            //FIXME: february 29th error!!!!
             case 28: //February non lap
               if(tm.Day < 28) {++tm.Day;}
               break;
