@@ -651,10 +651,10 @@ void write_order(int n)
 {
   if(0 <= n && n <= NUM_ORDERS - 1)
   {
-    Serial.print("dg|");
-    Serial.print("page ");
-    Serial.print(n);
-    Serial.println(" written");
+    //Serial.print("dg|");
+    //Serial.print("page ");
+    //Serial.print(n);
+    //Serial.println(" written");
     order_t *ptr = &order[n];
     i2c_eeprom_write_page(ORDER_ADDR + n * 12, (byte*)ptr, 12);
   }
@@ -1074,9 +1074,8 @@ void loop()
       pinMode(DHT_DATA_PIN, OUTPUT);
       digitalWrite(DHT_DATA_PIN, HIGH);
       delay(100);
-      Serial.println(read_dht11(DHT_DATA_PIN));
+      read_dht11(DHT_DATA_PIN);
       humidity = dht11_sensor_humidity;
-      Serial.println(dht11_sensor_humidity);
     #endif /* ENABLE_PLUS */
     
     last_weather_refresh = millis();
@@ -1185,7 +1184,7 @@ void loop()
             else // When we don't want to heat, because we hit the target,
                  // reset water temperature controller
             {
-              Serial.println("dg|reset");
+              //Serial.println("dg|reset");
               top_temperature_water = 0;
             }
           }else{top_temperature_water = 0;}
