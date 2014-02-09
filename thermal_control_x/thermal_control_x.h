@@ -25,7 +25,7 @@
 #define PHYSICAL_IMPLEMENTATION
 
 #define RELAY_PIN 9
-#define DHT_DATA_PIN 3
+#define DHT_DATA_PIN 8
 
 #ifdef ENABLE_PLUS
   #define MAIN_PAGES_COUNT 8
