@@ -1117,13 +1117,8 @@ void loop()
         
       ///////////////////////////////////////////
       
-      if(tm_now.Wday == 1) //If sunday (Yes, sunday is day 1...)
-      {
-        week_day_check = bitRead(order[i].active_days, 6);
-      } else
-      {
-        week_day_check = bitRead(order[i].active_days, tm_now.Wday - 2);
-      }
+      //Get weekday
+      week_day_check = bitRead(order[i].active_days, tm_now.Wday - 1);
       
       // If we between in time span and we havent activated any order yet
       if(order_on == false)
