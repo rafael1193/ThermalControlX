@@ -23,6 +23,7 @@
 #include "buttons.h"
 #include <OneWire.h>
 #include <Wire.h>
+#include "dht11.h"
 #include <DS1307RTC.h>
 #include "external_eeprom.h"
 
@@ -97,8 +98,6 @@ void setup() {
   Serial.begin(9600);
   
   Wire.begin();
-  
-  buttons_init();
   
   //Relay setup
   pinMode(RELAY_PIN, OUTPUT);
@@ -237,8 +236,8 @@ void setup() {
   main_pages[4].children_length =  1;
   
   // set date and time subpages
-  //strcpy(setdatetime_pages[0].title_row , "  00/ 00/ 0000  ");
-  //strcpy(setdatetime_pages[0].content_row,"     00: 00     ");
+  strcpy(setdatetime_pages[0].title_row , "  00/ 00/ 0000  ");
+  strcpy(setdatetime_pages[0].content_row,"     00: 00     ");
   setdatetime_pages[0].on_click = &on_setdatetime_submenu_click;
   setdatetime_pages[0].draw = &draw_setdatetime;
   
@@ -1071,9 +1070,14 @@ void loop()
     temperature_water = round_macro(t_wat_f);
     Serial.print("tc|");
     Serial.println(t_wat_f);
-    
-    //TODO: Humidity information
-    //TODO: Error handling
+    #ifdef ENABLE_PLUS
+      pinMode(DHT_DATA_PIN, OUTPUT);
+      digitalWrite(DHT_DATA_PIN, HIGH);
+      delay(100);
+      Serial.println(read_dht11(DHT_DATA_PIN));
+      humidity = dht11_sensor_humidity;
+      Serial.println(dht11_sensor_humidity);
+    #endif /* ENABLE_PLUS */
     
     last_weather_refresh = millis();
   }

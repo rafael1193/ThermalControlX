@@ -49,10 +49,6 @@ int lastButtonState = LOW;   // the previous reading from the input pin
 long lastDebounceTime = 0;  // the last time the output pin was toggled
 long debounceDelay = 500;    // the debounce time; increase if the output flickers
 
-void buttons_init() {
-  
-}
-
 button buttons_read() {
    // read the state of the switch into a local variable:
    int reading = analogRead(buttonPin);
